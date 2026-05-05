@@ -1,11 +1,11 @@
-require('dotenv').config();
+// 1. Tell dotenv to look one folder UP (in the root) for the .env file
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 
-// DOUBLE CHECK THIS PATH:
-// If your file is in a folder called 'config', use './config/db'
-// If your file is just sitting next to server.js, use './db'
+// Import your DB connection
 const connectDB = require('./config/db'); 
 
 const app = express();
@@ -14,6 +14,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Debugging: This will tell you if your variables are actually loading
+if (!process.env.MONGODB_URI) {
+    console.error("❌ ERROR: MONGODB_URI is undefined. Check your .env file path!");
+}
+
 // Connect to Database
 connectDB();
 
@@ -21,7 +26,7 @@ connectDB();
 app.use('/api/auth', require('./routes/auth'));
 
 app.get('/', (req, res) => {
-    res.send("Backend is running...");
+    res.send("College ERP Backend is running...");
 });
 
 const PORT = process.env.PORT || 5000;
