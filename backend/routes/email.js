@@ -22,15 +22,18 @@ router.post('/send', async (req, res) => {
   }
 
   try {
-    // Create a transporter using Gmail SMTP explicitly
+    // Create a transporter using Gmail SMTP on port 587 (more reliable on Render)
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 465,
-      secure: true, // use SSL
+      port: 587,
+      secure: false, // false for port 587
       auth: {
         user: process.env.EMAIL_USER.trim(),
         pass: process.env.EMAIL_PASS.trim(),
       },
+      tls: {
+        rejectUnauthorized: false // Helps with some network environments
+      }
     });
 
     // Send to all recipients
