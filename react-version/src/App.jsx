@@ -91,42 +91,19 @@ import PublicContact from './pages/PublicContact';
 import { adminNavigation, crmNavigation, studentNavigation, parentNavigation, librarianNavigation } from './config/navigation';
 import './index.css';
 
-// Mock users
-const adminUser = {
-  name: "Super Admin",
-  role: "Administrator",
-  initials: "SA"
+// Helper to get user from localStorage
+const getStoredUser = () => {
+  const user = localStorage.getItem('user');
+  return user ? JSON.parse(user) : null;
 };
 
-const crmUser = {
-  name: "Admission Staff",
-  role: "CRM Staff",
-  initials: "AD"
-};
-
-const studentUser = {
-  name: "Michael Chen",
-  role: "Student",
-  initials: "MC"
-};
-
-const parentUser = {
-  name: "William Chen",
-  role: "Parent/Guardian",
-  initials: "WC"
-};
-
-const librarianUser = {
-  name: "Jane Doe",
-  role: "Head Librarian",
-  initials: "LB"
-};
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Website Routes */}
+        {/* Public Website Routes (NO LOGIN REQUIRED) */}
         <Route element={<PublicLayout />}>
           <Route path="/home" element={<PublicHome />} />
           <Route path="/about" element={<PublicAbout />} />
@@ -135,17 +112,21 @@ function App() {
           <Route path="/contact" element={<PublicContact />} />
         </Route>
 
-        {/* Auth Route */}
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
-
         <Route path="/apply" element={<AdmissionForm />} />
 
-        {/* Admin Routes */}
-        <Route element={<MainLayout
-          sidebarProps={{ role: { title: "EduSystem", icon: "fas fa-graduation-cap" }, items: adminNavigation }}
-          user={adminUser}
-        />}>
+        {/* Admin Routes (LOGIN REQUIRED - ROLE: admin) */}
+        <Route
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <MainLayout
+                sidebarProps={{ role: { title: "EduSystem", icon: "fas fa-graduation-cap" }, items: adminNavigation }}
+                user={getStoredUser()}
+              />
+            </ProtectedRoute>
+          }
+        >
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/students" element={<AdminStudents />} />
           <Route path="/admin/add-student" element={<AdminAddStudent />} />
@@ -166,14 +147,19 @@ function App() {
           <Route path="/admin/access-control" element={<AdminAccessControl />} />
           <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/add-role" element={<AdminAddRole />} />
-
         </Route>
 
-        {/* CRM Routes */}
-        <Route element={<MainLayout
-          sidebarProps={{ role: { title: "CRM System", icon: "fas fa-users-cog" }, items: crmNavigation }}
-          user={crmUser}
-        />}>
+        {/* CRM Routes (LOGIN REQUIRED - ROLE: crm) */}
+        <Route
+          element={
+            <ProtectedRoute allowedRoles={['crm']}>
+              <MainLayout
+                sidebarProps={{ role: { title: "CRM System", icon: "fas fa-users-cog" }, items: crmNavigation }}
+                user={getStoredUser()}
+              />
+            </ProtectedRoute>
+          }
+        >
           <Route path="/crm" element={<CRMDashboard />} />
           <Route path="/crm/pipeline" element={<CRMPipeline />} />
           <Route path="/crm/leads" element={<CRMLeads />} />
@@ -189,33 +175,56 @@ function App() {
           <Route path="/crm/reports" element={<CRMReports />} />
         </Route>
 
-        {/* Super Admin Routes */}
-        <Route path="/super-admin" element={<SuperAdminDashboard />} />
-        <Route path="/superadmin" element={<SuperAdminDashboard />} />
-        <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
-        <Route path="/super-admin/colleges" element={<SuperAdminColleges />} />
-        <Route path="/super-admin/students" element={<SuperAdminStudents />} />
-        <Route path="/super-admin/activity" element={<SuperAdminActivity />} />
-        <Route path="/super-admin/access" element={<SuperAdminAccess />} />
-        <Route path="/super-admin/add-college" element={<SuperAdminAddCollege />} />
-        <Route path="/super-admin/settings" element={<SuperAdminSettings />} />
+        {/* Super Admin Routes (LOGIN REQUIRED - ROLE: superadmin) */}
+        <Route
+          element={
+            <ProtectedRoute allowedRoles={['superadmin']}>
+              <Routes>
+                <Route index element={<SuperAdminDashboard />} />
+                <Route path="dashboard" element={<SuperAdminDashboard />} />
+                <Route path="colleges" element={<SuperAdminColleges />} />
+                <Route path="students" element={<SuperAdminStudents />} />
+                <Route path="activity" element={<SuperAdminActivity />} />
+                <Route path="access" element={<SuperAdminAccess />} />
+                <Route path="add-college" element={<SuperAdminAddCollege />} />
+                <Route path="settings" element={<SuperAdminSettings />} />
+              </Routes>
+            </ProtectedRoute>
+          }
+          path="/super-admin/*"
+        />
+        <Route path="/superadmin" element={<Navigate to="/super-admin" replace />} />
 
-        {/* Teacher Routes */}
-        <Route path="/teacher" element={<TeacherDashboard />} />
-        <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-        <Route path="/teacher/classes" element={<TeacherClasses />} />
-        <Route path="/teacher/attendance" element={<TeacherAttendance />} />
-        <Route path="/teacher/assignments" element={<TeacherAssignments />} />
-        <Route path="/teacher/results" element={<TeacherResults />} />
-        <Route path="/teacher/events" element={<TeacherEvents />} />
-        <Route path="/teacher/add-assignment" element={<TeacherAddAssignment />} />
+        {/* Teacher Routes (LOGIN REQUIRED - ROLE: teacher) */}
+        <Route
+          element={
+            <ProtectedRoute allowedRoles={['teacher']}>
+              <Routes>
+                <Route index element={<TeacherDashboard />} />
+                <Route path="dashboard" element={<TeacherDashboard />} />
+                <Route path="classes" element={<TeacherClasses />} />
+                <Route path="attendance" element={<TeacherAttendance />} />
+                <Route path="assignments" element={<TeacherAssignments />} />
+                <Route path="results" element={<TeacherResults />} />
+                <Route path="events" element={<TeacherEvents />} />
+                <Route path="add-assignment" element={<TeacherAddAssignment />} />
+              </Routes>
+            </ProtectedRoute>
+          }
+          path="/teacher/*"
+        />
 
-
-        {/* Student Routes */}
-        <Route element={<MainLayout
-          sidebarProps={{ role: { title: "EduSystem", icon: "fas fa-graduation-cap" }, items: studentNavigation }}
-          user={studentUser}
-        />}>
+        {/* Student Routes (LOGIN REQUIRED - ROLE: student) */}
+        <Route
+          element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <MainLayout
+                sidebarProps={{ role: { title: "EduSystem", icon: "fas fa-graduation-cap" }, items: studentNavigation }}
+                user={getStoredUser()}
+              />
+            </ProtectedRoute>
+          }
+        >
           <Route path="/student" element={<StudentDashboard />} />
           <Route path="/student/dashboard" element={<StudentDashboard />} />
           <Route path="/student/profile" element={<StudentProfile />} />
@@ -229,11 +238,17 @@ function App() {
           <Route path="/student/submit-assignment" element={<StudentSubmitAssignment />} />
         </Route>
 
-        {/* Parent Routes */}
-        <Route element={<MainLayout
-          sidebarProps={{ role: { title: "EduSystem", icon: "fas fa-graduation-cap" }, items: parentNavigation }}
-          user={parentUser}
-        />}>
+        {/* Parent Routes (LOGIN REQUIRED - ROLE: parent) */}
+        <Route
+          element={
+            <ProtectedRoute allowedRoles={['parent']}>
+              <MainLayout
+                sidebarProps={{ role: { title: "EduSystem", icon: "fas fa-graduation-cap" }, items: parentNavigation }}
+                user={getStoredUser()}
+              />
+            </ProtectedRoute>
+          }
+        >
           <Route path="/parent" element={<ParentDashboard />} />
           <Route path="/parent/dashboard" element={<ParentDashboard />} />
           <Route path="/parent/academic" element={<ParentAcademic />} />
@@ -242,11 +257,17 @@ function App() {
           <Route path="/parent/communication" element={<ParentCommunication />} />
         </Route>
 
-        {/* Librarian Routes */}
-        <Route element={<MainLayout
-          sidebarProps={{ role: { title: "EduSystem", icon: "fas fa-graduation-cap" }, items: librarianNavigation }}
-          user={librarianUser}
-        />}>
+        {/* Librarian Routes (LOGIN REQUIRED - ROLE: librarian) */}
+        <Route
+          element={
+            <ProtectedRoute allowedRoles={['librarian']}>
+              <MainLayout
+                sidebarProps={{ role: { title: "EduSystem", icon: "fas fa-graduation-cap" }, items: librarianNavigation }}
+                user={getStoredUser()}
+              />
+            </ProtectedRoute>
+          }
+        >
           <Route path="/librarian" element={<LibrarianDashboard />} />
           <Route path="/librarian/dashboard" element={<LibrarianDashboard />} />
           <Route path="/librarian/books" element={<LibrarianBooks />} />
@@ -257,7 +278,6 @@ function App() {
           <Route path="/librarian/events" element={<LibrarianEvents />} />
           <Route path="/librarian/events/add" element={<LibrarianAddEvent />} />
         </Route>
-
 
         {/* Redirects */}
         <Route path="*" element={<Navigate to="/" />} />
