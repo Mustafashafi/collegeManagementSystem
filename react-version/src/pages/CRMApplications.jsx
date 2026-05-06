@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const CRMApplications = () => {
   const navigate = useNavigate();
@@ -87,11 +88,11 @@ const CRMApplications = () => {
                 <td>{app.program}</td>
                 <td>{app.date}</td>
                 <td><span style={{
-                      display: 'inline-block',
-                      textAlign: 'center',
-                      whiteSpace: 'nowrap',  // ✅ Prevent line break
-                      
-                    }} className={`status-badge ${app.statusClass}`}>{app.status}</span></td>
+                  display: 'inline-block',
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap',  // ✅ Prevent line break
+
+                }} className={`status-badge ${app.statusClass}`}>{app.status}</span></td>
                 <td>
                   {app.enrollable ? (
                     <button className="btn-sm" style={{ background: '#1a1a1a', color: '#fff', borderColor: '#1a1a1a' }}>Enroll Student</button>
@@ -205,7 +206,7 @@ const CRMApplications = () => {
               </button>
               <button
                 onClick={() => {
-                  alert('Emails sent!');
+                  toast.success('Emails sent successfully!');
                   setIsEmailModalOpen(false);
                   setSelectedApps([]);
                 }}

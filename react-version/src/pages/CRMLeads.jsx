@@ -1,16 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const CRMLeads = () => {
   const navigate = useNavigate();
+  const [leads, setLeads] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailMessage, setEmailMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
-  const leads = [
-    { id: 1, name: "John Doe", added: "Today", program: "B.Sc Computer Science", email: "johndoe@email.com", phone: "+1 234 567 890", source: "Website", status: "New Inquiry", statusClass: "status-new", assigned: "Sarah Jenkins" },
-    { id: 2, name: "Emma Watson", added: "2 days ago", program: "Business Administration", email: "emma.w@email.com", phone: "+1 987 654 321", source: "Social Media", status: "Contacted", statusClass: "status-contacted", assigned: "Mike Ross" },
-    { id: 3, name: "David Smith", added: "1 week ago", program: "Engineering (Mechanical)", email: "d.smith99@email.com", phone: "+1 555 123 456", source: "Walk-in", status: "Interested", statusClass: "status-interested", assigned: "Sarah Jenkins" },
-  ];
+  useEffect(() => {
+    fetchLeads();
+  }, []);
+
+  const fetchLeads = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/leads');
+      const data = await response.json();
+      
+      const formattedLeads = data.map(lead => ({
+        ...lead,
+        id: lead._id,
+        name: `${lead.firstName} ${lead.lastName}`,
+        added: new Date(lead.added).toLocaleDateString()
+      }));
+      setLeads(formattedLeads);
+    } catch (err) {
+      console.error('Error fetching leads:', err);
+      toast.error('Failed to fetch leads.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleLeadSelection = (id) => {
     setSelectedLeads(prev =>
@@ -42,6 +66,80 @@ const CRMLeads = () => {
   const handleActionClick = (e, callback) => {
     e.stopPropagation();
     callback();
+  };
+
+  const handleSendEmail = async () => {
+    if (!emailSubject || !emailMessage) {
+      toast.error('Please fill in both subject and message.');
+      return;
+    }
+
+    setIsSending(true);
+    const recipients = getSelectedLeads().map(l => ({ email: l.email, name: l.name }));
+
+    try {
+      const response = await fetch('http://localhost:5000/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipients,
+          subject: emailSubject,
+          message: emailMessage
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success(`Emails sent successfully to ${data.sent} leads!`);
+        
+        // Update status for all recipients
+        const updatePromises = selectedLeads.map(id => 
+          fetch(`http://localhost:5000/api/leads/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'Contacted' })
+          })
+        );
+        
+        await Promise.all(updatePromises);
+        
+        setIsEmailModalOpen(false);
+        setSelectedLeads([]);
+        setEmailSubject('');
+        setEmailMessage('');
+        fetchLeads(); // Refresh list to show new status
+      } else {
+        toast.error(data.msg || 'Failed to send emails.');
+      }
+    } catch (err) {
+      console.error('Error sending emails:', err);
+      toast.error('Error connecting to email server.');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleDeleteLead = async (e, id) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this lead?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/leads/${id}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Lead deleted successfully');
+        fetchLeads(); // Refresh list
+      } else {
+        toast.error(data.msg || 'Failed to delete lead');
+      }
+    } catch (err) {
+      console.error('Error deleting lead:', err);
+      toast.error('Error connecting to server');
+    }
   };
 
   return (
@@ -101,7 +199,7 @@ const CRMLeads = () => {
                 <input
                   type="checkbox"
                   onChange={toggleSelectAll}
-                  checked={selectedLeads.length === leads.length}
+                  checked={selectedLeads.length === leads.length && leads.length > 0}
                 />
               </th>
               <th>Student Name</th>
@@ -114,7 +212,20 @@ const CRMLeads = () => {
             </tr>
           </thead>
           <tbody>
-            {leads.map((lead) => (
+            {loading ? (
+              <tr>
+                <td colSpan="8" style={{ textAlign: 'center', padding: '40px' }}>
+                  <i className="fas fa-spinner fa-spin" style={{ marginRight: '10px' }}></i>
+                  Loading leads...
+                </td>
+              </tr>
+            ) : leads.length === 0 ? (
+              <tr>
+                <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                  No leads found. Submissions from the public admission page will appear here.
+                </td>
+              </tr>
+            ) : leads.map((lead) => (
               <tr
                 key={lead.id}
                 onClick={() => handleRowClick(lead)}
@@ -141,22 +252,22 @@ const CRMLeads = () => {
                     style={{
                       display: 'inline-block',
                       textAlign: 'center',
-                      whiteSpace: 'nowrap',  // ✅ Prevent line break
-                      
+                      whiteSpace: 'nowrap',
                     }}
                   >
                     {lead.status}
                   </span>
                 </td>
-                <td>{lead.assigned}</td>
+                <td>{lead.assigned || 'Unassigned'}</td>
                 <td>
                   <div className="action-btns">
                     <button
                       className="btn-icon"
-                      title="Call"
-                      onClick={(e) => handleActionClick(e, () => { })}
+                      title="Delete"
+                      onClick={(e) => handleDeleteLead(e, lead.id)}
+                      style={{ color: '#ef4444' }}
                     >
-                      <i className="fas fa-phone"></i>
+                      <i className="fas fa-trash"></i>
                     </button>
                     <button
                       className="btn-icon"
@@ -193,7 +304,7 @@ const CRMLeads = () => {
           >
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Send Bulk Email</h3>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Send Email</h3>
               <button
                 onClick={() => setIsEmailModalOpen(false)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--text-muted)', lineHeight: 1 }}
@@ -212,6 +323,7 @@ const CRMLeads = () => {
                   display: 'flex', flexWrap: 'wrap', gap: '8px',
                   padding: '10px 12px', border: '1px solid var(--border)',
                   borderRadius: '8px', minHeight: '44px', background: '#fafafa',
+                  maxHeight: '120px', overflowY: 'auto'
                 }}
               >
                 {getSelectedLeads().map((lead) => (
@@ -238,6 +350,8 @@ const CRMLeads = () => {
               <input
                 type="text"
                 placeholder="Enter email subject..."
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
                 style={{
                   width: '100%', padding: '10px 12px', border: '1px solid var(--border)',
                   borderRadius: '8px', fontSize: '14px', outline: 'none',
@@ -254,6 +368,8 @@ const CRMLeads = () => {
               <textarea
                 rows={7}
                 placeholder="Write your message here..."
+                value={emailMessage}
+                onChange={(e) => setEmailMessage(e.target.value)}
                 style={{
                   width: '100%', padding: '10px 12px', border: '1px solid var(--border)',
                   borderRadius: '8px', fontSize: '14px', outline: 'none', resize: 'vertical',
@@ -266,6 +382,7 @@ const CRMLeads = () => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '4px' }}>
               <button
                 onClick={() => setIsEmailModalOpen(false)}
+                disabled={isSending}
                 style={{
                   padding: '10px 24px', border: '1px solid var(--border)', borderRadius: '8px',
                   background: '#fff', color: 'var(--text-main)', fontSize: '14px',
@@ -275,19 +392,21 @@ const CRMLeads = () => {
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  alert('Emails sent!');
-                  setIsEmailModalOpen(false);
-                  setSelectedLeads([]);
-                }}
+                onClick={handleSendEmail}
+                disabled={isSending}
                 style={{
                   padding: '10px 24px', border: 'none', borderRadius: '8px',
                   background: 'var(--text-main)', color: '#fff', fontSize: '14px',
                   fontWeight: 600, cursor: 'pointer', display: 'inline-flex',
                   alignItems: 'center', gap: '8px',
+                  opacity: isSending ? 0.7 : 1
                 }}
               >
-                <i className="fas fa-paper-plane"></i> Send to All
+                {isSending ? (
+                  <><i className="fas fa-spinner fa-spin"></i> Sending...</>
+                ) : (
+                  <><i className="fas fa-paper-plane"></i> Send Email</>
+                )}
               </button>
             </div>
           </div>

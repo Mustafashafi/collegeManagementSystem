@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import AdmissionForm from './pages/AdmissionForm';
 
 import MainLayout from './layouts/MainLayout';
@@ -102,6 +103,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 function App() {
   return (
     <Router>
+      <Toaster position="top-right" toastOptions={{ duration: 3500, style: { borderRadius: '10px', fontFamily: 'inherit', fontSize: '14px' } }} />
       <Routes>
         {/* Public Website Routes (NO LOGIN REQUIRED) */}
         <Route element={<PublicLayout />}>

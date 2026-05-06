@@ -1,4 +1,5 @@
 import React from 'react';
+import toast from 'react-hot-toast';
 
 const CRMApplicationForm = () => {
   return (
@@ -70,7 +71,7 @@ const CRMApplicationForm = () => {
             <button className="btn btn-request" style={{ padding: '10px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', textAlign: 'center', border: 'none', background: '#f59e0b', color: '#fff' }}>Request Changes</button>
             <button className="btn btn-reject" style={{ padding: '10px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', textAlign: 'center', border: 'none', background: '#ef4444', color: '#fff' }}>Reject Application</button>
             
-            <button id="enrollBtn" className="btn btn-enroll" onClick={() => alert('Student record created in ERP. ID generated: S-2026-045')} style={{ padding: '10px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', textAlign: 'center', border: 'none', background: 'var(--primary)', color: '#fff', marginTop: '20px', display: 'none' }}>Enroll Student (Send to ERP)</button>
+            <button id="enrollBtn" className="btn btn-enroll" onClick={() => toast.success('Student record created in ERP. ID generated: S-2026-045')} style={{ padding: '10px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', textAlign: 'center', border: 'none', background: 'var(--primary)', color: '#fff', marginTop: '20px', display: 'none' }}>Enroll Student (Send to ERP)</button>
           </div>
         </div>
       </div>

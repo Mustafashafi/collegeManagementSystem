@@ -366,6 +366,12 @@ body {
   letter-spacing: 0.5px;
 }
 
+.checkbox-col {
+  width: 40px;
+  padding-left: 20px !important;
+  padding-right: 0 !important;
+}
+
 .data-table tr:last-child td {
   border-bottom: none;
 }

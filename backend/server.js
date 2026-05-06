@@ -14,9 +14,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Debugging: This will tell you if your variables are actually loading
 if (!process.env.MONGODB_URI) {
     console.error("❌ ERROR: MONGODB_URI is undefined. Check your .env file path!");
+} else {
+    console.log("✅ .env file loaded successfully");
+    console.log("📧 EMAIL_USER:", process.env.EMAIL_USER ? "Configured" : "MISSING");
+    console.log("📧 EMAIL_PASS:", process.env.EMAIL_PASS ? "Configured" : "MISSING");
 }
 
 // Connect to Database
@@ -24,6 +27,8 @@ connectDB();
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/leads', require('./routes/leads'));
+app.use('/api/email', require('./routes/email'));
 
 app.get('/', (req, res) => {
     res.send("College ERP Backend is running...");

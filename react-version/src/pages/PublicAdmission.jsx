@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
+import toast from 'react-hot-toast';
 
 const PublicAdmission = () => {
-  const [showToast, setShowToast] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Collect data (matching the original HTML logic)
+
     const formData = {
       firstName: e.target[0].value,
       lastName: e.target[1].value,
@@ -14,25 +13,28 @@ const PublicAdmission = () => {
       phone: e.target[3].value,
       program: e.target[4].value,
       institution: e.target[5].value,
-      marks: e.target[6].value,
-      date: new Date().toLocaleDateString(),
-      status: 'Applied'
+      marks: e.target[6].value
     };
 
-    // Save to CRM leads (as potential applications)
-    const existingLeads = JSON.parse(localStorage.getItem('crm_leads') || '[]');
-    existingLeads.push({
-      ...formData,
-      id: Date.now(),
-      name: formData.firstName + ' ' + formData.lastName,
-      source: 'Admission Form'
-    });
-    localStorage.setItem('crm_leads', JSON.stringify(existingLeads));
+    try {
+      const response = await fetch('http://localhost:5000/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
 
-    // Show Toast
-    setShowToast(true);
-    e.target.reset();
-    setTimeout(() => setShowToast(false), 4000);
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Application submitted successfully! Our team will contact you shortly.');
+        e.target.reset();
+      } else {
+        toast.error('Failed to submit application. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error submitting application:', err);
+      toast.error('Cannot connect to server. Please try again.');
+    }
   };
 
   return (
@@ -84,7 +86,7 @@ const PublicAdmission = () => {
                   <input type="text" className="form-input" required />
                 </div>
                 <div className="form-group">
-                  <label>Marks / GPA</label>
+                  <label>Marks</label>
                   <input type="text" className="form-input" required />
                 </div>
 
@@ -96,12 +98,6 @@ const PublicAdmission = () => {
           </div>
         </div>
       </section>
-
-      {/* Success Toast */}
-      <div id="toast" className={showToast ? 'show' : ''}>
-        <i className="fas fa-check-circle"></i>
-        <span>Application submitted successfully!</span>
-      </div>
     </>
   );
 };

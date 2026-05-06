@@ -1,28 +1,64 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 const CRMDashboard = () => {
+  const [leads, setLeads] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLeads = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/leads');
+        const data = await response.json();
+        setLeads(data);
+      } catch (err) {
+        console.error('Error fetching leads:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLeads();
+  }, []);
+
+  // Calculate dynamic stats
+  const totalInquiries = leads.length;
+  const activeLeads = leads.filter(l => l.status !== 'Lost').length;
+  const applications = leads.filter(l => l.status === 'Application Submitted').length;
+  const contactedLeads = leads.filter(l => l.status === 'Contacted' || l.status === 'Interested' || l.status === 'Application Submitted').length;
+  const interestedLeads = leads.filter(l => l.status === 'Interested' || l.status === 'Application Submitted').length;
+
   const stats = [
-    { label: "Total Inquiries", value: "1,248", icon: "fas fa-users", trend: "12%", trendUp: true },
-    { label: "Active Leads", value: "342", icon: "fas fa-user-clock", desc: "Currently in pipeline" },
-    { label: "Applications", value: "156", icon: "fas fa-file-alt", desc: "In progress" },
-    { label: "Admissions Completed", value: "89", icon: "fas fa-user-graduate", color: "#10b981", desc: "This intake season" },
+    { label: "Total Inquiries", value: totalInquiries, icon: "fas fa-users", desc: "Total leads captured" },
+    { label: "Active Leads", value: activeLeads, icon: "fas fa-user-clock", desc: "Currently in pipeline" },
+    { label: "Applications", value: applications, icon: "fas fa-file-alt", desc: "Submitted applications" },
+    { label: "Conversion Progress", value: contactedLeads, icon: "fas fa-chart-line", color: "#10b981", desc: "Leads contacted/processed" },
   ];
 
-  const activities = [
-    { type: "New Inquiry", desc: "from Website: John Doe", time: "10 mins ago", icon: "fas fa-user-plus" },
-    { type: "Application Submitted", desc: "by Emily Smith", time: "1 hour ago", icon: "fas fa-file-signature", bg: "#dcfce7", color: "#166534" },
-    { type: "Follow-up call", desc: "completed with Mark Johnson", time: "3 hours ago", icon: "fas fa-phone-alt" },
-    { type: "Admission Approved", desc: "for Sarah Williams", time: "Yesterday", icon: "fas fa-user-graduate", bg: "#dbeafe", color: "#1e40af" },
-  ];
-
+  // Dynamic Funnel Data
   const funnelData = [
-    { label: "Inquiry", value: "1,248", height: "100%", opacity: 0.2 },
-    { label: "Contacted", value: "750", height: "60%", opacity: 0.4 },
-    { label: "Interested", value: "500", height: "40%", opacity: 0.6 },
-    { label: "Applied", value: "156", height: "15%", opacity: 0.8 },
-    { label: "Enrolled", value: "89", height: "8%", opacity: 1 },
+    { label: "Total Inquiries", value: totalInquiries, height: totalInquiries > 0 ? "100%" : "0%", opacity: 0.2 },
+    { label: "Contacted", value: contactedLeads, height: totalInquiries > 0 ? `${(contactedLeads / totalInquiries) * 100}%` : "0%", opacity: 0.4 },
+    { label: "Interested", value: interestedLeads, height: totalInquiries > 0 ? `${(interestedLeads / totalInquiries) * 100}%` : "0%", opacity: 0.6 },
+    { label: "Applied", value: applications, height: totalInquiries > 0 ? `${(applications / totalInquiries) * 100}%` : "0%", opacity: 1.0 },
   ];
+
+  // Recent Activity from real leads
+  const activities = leads.slice(0, 4).map(lead => ({
+    type: lead.status === 'New Inquiry' ? 'New Inquiry' : 'Status Updated',
+    desc: `${lead.firstName} ${lead.lastName} - ${lead.program}`,
+    time: new Date(lead.added).toLocaleDateString(),
+    icon: lead.status === 'New Inquiry' ? "fas fa-user-plus" : "fas fa-sync-alt",
+    bg: lead.status === 'Application Submitted' ? "#dcfce7" : "#f1f5f9",
+    color: lead.status === 'Application Submitted' ? "#166534" : "var(--primary)"
+  }));
+
+  if (loading) {
+    return (
+      <div className="dashboard-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80vh' }}>
+        <i className="fas fa-spinner fa-spin" style={{ fontSize: '32px', color: 'var(--primary)' }}></i>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-content">
@@ -31,10 +67,7 @@ const CRMDashboard = () => {
           <h1>CRM Dashboard</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>Overview of admissions and lead pipeline.</p>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
 
-          <Link to="/crm/leads/add" className="btn-primary"><i className="fas fa-plus"></i> Add Lead</Link>
-        </div>
       </div>
 
       <div className="stats-grid">
@@ -46,8 +79,7 @@ const CRMDashboard = () => {
             </div>
             <div className="stat-val" style={{ fontSize: '28px', fontWeight: '700', marginBottom: '4px', color: stat.color }}>{stat.value}</div>
             <div className="stat-desc" style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-              {stat.trend && <span style={{ color: stat.trendUp ? '#10b981' : '#ef4444' }}><i className={`fas fa-arrow-${stat.trendUp ? 'up' : 'down'}`}></i> {stat.trend}</span>}
-              {stat.trend ? ` vs last month` : stat.desc}
+              {stat.desc}
             </div>
           </div>
         ))}
@@ -57,7 +89,6 @@ const CRMDashboard = () => {
         <div className="panel">
           <div className="panel-header">
             <h3>Conversion Funnel</h3>
-            <select style={{ padding: '6px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '12px' }}><option>This Month</option></select>
           </div>
           <div className="panel-body" style={{ padding: '20px' }}>
             <div className="chart-container">
@@ -77,7 +108,7 @@ const CRMDashboard = () => {
           </div>
           <div className="panel-body" style={{ padding: '20px' }}>
             <div className="activity-list" style={{ padding: 0 }}>
-              {activities.map((activity, idx) => (
+              {activities.length > 0 ? activities.map((activity, idx) => (
                 <div className="activity-item" key={idx}>
                   <div className="activity-icon" style={{ backgroundColor: activity.bg, color: activity.color }}>
                     <i className={activity.icon}></i>
@@ -87,7 +118,9 @@ const CRMDashboard = () => {
                     <span className="activity-time">{activity.time}</span>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '20px' }}>No recent activity found.</p>
+              )}
             </div>
           </div>
         </div>
