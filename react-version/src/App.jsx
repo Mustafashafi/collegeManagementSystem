@@ -79,6 +79,15 @@ import LibrarianRecords from './pages/LibrarianRecords';
 import LibrarianEvents from './pages/LibrarianEvents';
 import LibrarianAddEvent from './pages/LibrarianAddEvent';
 
+// Public Website Pages
+import PublicLayout from './layouts/PublicLayout';
+import PublicHome from './pages/PublicHome';
+import PublicAbout from './pages/PublicAbout';
+import PublicEvents from './pages/PublicEvents';
+import PublicAdmission from './pages/PublicAdmission';
+import PublicContact from './pages/PublicContact';
+
+
 import { adminNavigation, crmNavigation, studentNavigation, parentNavigation, librarianNavigation } from './config/navigation';
 import './index.css';
 
@@ -117,8 +126,19 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Public Website Routes */}
+        <Route element={<PublicLayout />}>
+          <Route path="/home" element={<PublicHome />} />
+          <Route path="/about" element={<PublicAbout />} />
+          <Route path="/events" element={<PublicEvents />} />
+          <Route path="/admission" element={<PublicAdmission />} />
+          <Route path="/contact" element={<PublicContact />} />
+        </Route>
+
         {/* Auth Route */}
+        <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
+
         <Route path="/apply" element={<AdmissionForm />} />
 
         {/* Admin Routes */}
@@ -240,7 +260,8 @@ function App() {
 
 
         {/* Redirects */}
-        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="*" element={<Navigate to="/" />} />
+
       </Routes>
     </Router>
   );
