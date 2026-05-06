@@ -1,16 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { Resend } = require('resend');
+const SibApiV3Sdk = require('@getbrevo/brevo');
 
 // @route   POST /api/email/send
-// @desc    Send email to one or more leads using Resend API (Works on Render)
+// @desc    Send email to one or more leads using Brevo API (Works on Render, Free Forever)
 router.post('/send', async (req, res) => {
   const { recipients, subject, message } = req.body;
 
-  if (!process.env.RESEND_API_KEY) {
+  if (!process.env.BREVO_API_KEY) {
     return res.status(500).json({ 
       success: false, 
-      msg: 'Resend API key is not configured in the server environment (RESEND_API_KEY).' 
+      msg: 'Brevo API key is not configured (BREVO_API_KEY).' 
     });
   }
 
@@ -21,15 +21,19 @@ router.post('/send', async (req, res) => {
     return res.status(400).json({ success: false, msg: 'Subject and message are required.' });
   }
 
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  // Configure Brevo API
+  let defaultClient = SibApiV3Sdk.ApiClient.instance;
+  let apiKey = defaultClient.authentications['api-key'];
+  apiKey.apiKey = process.env.BREVO_API_KEY;
+
+  let apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 
   try {
     const sendPromises = recipients.map(({ email, name }) => {
-      return resend.emails.send({
-        from: 'College CRM <onboarding@resend.dev>', // You can change this once you verify a domain
-        to: email,
-        subject: subject,
-        html: `
+      let sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+      
+      sendSmtpEmail.subject = subject;
+      sendSmtpEmail.htmlContent = `
           <div style="font-family: Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px;">
             <div style="background: #1a1a1a; color: #fff; padding: 20px; border-radius: 12px 12px 0 0; text-align: center;">
               <h2 style="margin: 0; font-size: 20px;">Skyra Institute</h2>
@@ -42,23 +46,19 @@ router.post('/send', async (req, res) => {
               <p style="font-size: 12px; color: #9ca3af;">This email was sent by Skyra Institute Admissions. Please do not reply to this email directly.</p>
             </div>
           </div>
-        `,
-      });
+      `;
+      sendSmtpEmail.sender = { "name": "Skyra Admissions", "email": "mustafashafi143@gmail.com" }; // Your verified Brevo sender
+      sendSmtpEmail.to = [{ "email": email, "name": name }];
+
+      return apiInstance.sendTransacEmail(sendSmtpEmail);
     });
 
-    const results = await Promise.all(sendPromises);
-
-    // Check for any errors in Resend results
-    const errors = results.filter(r => r.error);
-    if (errors.length > 0) {
-      console.error('Resend Errors:', errors);
-      return res.status(500).json({ success: false, msg: 'Some emails failed to send.', detail: errors[0].error });
-    }
+    await Promise.all(sendPromises);
 
     res.json({ success: true, sent: recipients.length });
   } catch (err) {
-    console.error('Resend catch error:', err.message);
-    res.status(500).json({ success: false, msg: err.message });
+    console.error('Brevo API error:', err.message || err);
+    res.status(500).json({ success: false, msg: err.message || 'Error sending email via Brevo.' });
   }
 });
 
