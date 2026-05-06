@@ -26,9 +26,10 @@ router.post('/send', async (req, res) => {
         method: 'POST',
         headers: {
           'accept': 'application/json',
+          'content-type': 'application/json',
           'api-key': process.env.BREVO_API_KEY.trim(),
           'x-sib-api-key': process.env.BREVO_API_KEY.trim(),
-          'content-type': 'application/json'
+          'api_key': process.env.BREVO_API_KEY.trim()
         },
         body: JSON.stringify({
           sender: { name: 'Skyra Admissions', email: 'mustafashafi143@gmail.com' },
@@ -57,7 +58,9 @@ router.post('/send', async (req, res) => {
     // Check if all requests were successful
     for (const response of responses) {
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorBody = await response.text();
+        console.error('Brevo Full Error Response:', errorBody);
+        const errorData = JSON.parse(errorBody);
         throw new Error(errorData.message || 'Brevo API error');
       }
     }
