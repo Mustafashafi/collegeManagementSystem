@@ -20,7 +20,8 @@ const CRMPipeline = () => {
 
   const fetchLeads = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/leads');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_URL}/api/leads`);
       const data = await response.json();
       setLeads(data);
     } catch (err) {
@@ -32,7 +33,8 @@ const CRMPipeline = () => {
 
   const handleUpdateStatus = async (leadId, newStatus) => {
     try {
-      await fetch(`http://localhost:5000/api/leads/${leadId}`, {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      await fetch(`${API_URL}/api/leads/${leadId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -53,7 +55,8 @@ const CRMPipeline = () => {
     const recipients = [{ email: selectedLeadForEmail.email, name: `${selectedLeadForEmail.firstName} ${selectedLeadForEmail.lastName}` }];
 
     try {
-      const response = await fetch('http://localhost:5000/api/email/send', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_URL}/api/email/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

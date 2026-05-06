@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 
 const ParentFees = () => {
   const [showPayModal, setShowPayModal] = useState(false);
@@ -19,7 +20,7 @@ const ParentFees = () => {
   const processPayment = () => {
     setIsProcessing(true);
     setTimeout(() => {
-      alert('Payment Successful! Your receipt is now available in Payment History.');
+      toast.success('Payment Successful! Your receipt is now available in Payment History.');
       setIsProcessing(false);
       setShowPayModal(false);
     }, 2000);

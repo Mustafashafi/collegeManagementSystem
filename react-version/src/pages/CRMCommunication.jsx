@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 
 const CRMCommunication = () => {
   const [activeTab, setActiveTab] = useState('Email');
@@ -184,7 +185,7 @@ const CRMCommunication = () => {
               <i className="fas fa-paperclip"></i> Attach File
             </button>
             <button
-              onClick={() => alert('Message Sent!')}
+              onClick={() => toast.success('Message Sent!')}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                 padding: '9px 20px', border: 'none', borderRadius: '8px',
