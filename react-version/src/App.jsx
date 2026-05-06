@@ -114,7 +114,7 @@ function App() {
           <Route path="/contact" element={<PublicContact />} />
         </Route>
 
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/apply" element={<AdmissionForm />} />
 
