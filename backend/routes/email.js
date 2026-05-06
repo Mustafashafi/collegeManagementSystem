@@ -21,12 +21,9 @@ router.post('/send', async (req, res) => {
     return res.status(400).json({ success: false, msg: 'Subject and message are required.' });
   }
 
-  // Configure Brevo API
-  let defaultClient = SibApiV3Sdk.ApiClient.instance;
-  let apiKey = defaultClient.authentications['api-key'];
-  apiKey.apiKey = process.env.BREVO_API_KEY;
-
+  // Configure Brevo API (Newer Version)
   let apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+  apiInstance.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
 
   try {
     const sendPromises = recipients.map(({ email, name }) => {
@@ -47,7 +44,7 @@ router.post('/send', async (req, res) => {
             </div>
           </div>
       `;
-      sendSmtpEmail.sender = { "name": "Skyra Admissions", "email": "mustafashafi143@gmail.com" }; // Your verified Brevo sender
+      sendSmtpEmail.sender = { "name": "Skyra Admissions", "email": "mustafashafi143@gmail.com" }; 
       sendSmtpEmail.to = [{ "email": email, "name": name }];
 
       return apiInstance.sendTransacEmail(sendSmtpEmail);
