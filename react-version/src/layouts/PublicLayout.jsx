@@ -56,6 +56,7 @@ const PublicLayout = () => {
             </ul>
             <div className="nav-actions">
               <Link to="/admission" className="btn btn-yellow">Apply Now</Link>
+
             </div>
           </nav>
         </div>

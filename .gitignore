@@ -1,22 +1,2 @@
-# Dependency directories
 node_modules/
-**/node_modules/
-
-# Environment files
 .env
-**/.env
-.env.local
-.env.*.local
-
-# Build outputs
-dist/
-build/
-.next/
-
-# IDE files
-.vscode/
-.idea/
-
-# OS files
-Thumbs.db
-.DS_Store

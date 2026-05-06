@@ -18,8 +18,7 @@ const CRMLeads = () => {
 
   const fetchLeads = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${API_URL}/api/leads`);
+      const response = await fetch('http://localhost:5000/api/leads');
       const data = await response.json();
       
       const formattedLeads = data.map(lead => ({
@@ -79,8 +78,7 @@ const CRMLeads = () => {
     const recipients = getSelectedLeads().map(l => ({ email: l.email, name: l.name }));
 
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${API_URL}/api/email/send`, {
+      const response = await fetch('http://localhost:5000/api/email/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -96,14 +94,13 @@ const CRMLeads = () => {
         toast.success(`Emails sent successfully to ${data.sent} leads!`);
         
         // Update status for all recipients
-        const updatePromises = selectedLeads.map(id => {
-          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-          return fetch(`${API_URL}/api/leads/${id}`, {
+        const updatePromises = selectedLeads.map(id => 
+          fetch(`http://localhost:5000/api/leads/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'Contacted' })
           })
-        });
+        );
         
         await Promise.all(updatePromises);
         
@@ -128,8 +125,7 @@ const CRMLeads = () => {
     if (!window.confirm('Are you sure you want to delete this lead?')) return;
 
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${API_URL}/api/leads/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/leads/${id}`, {
         method: 'DELETE'
       });
       const data = await response.json();
