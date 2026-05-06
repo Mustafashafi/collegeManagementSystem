@@ -55,7 +55,6 @@ const PublicLayout = () => {
               <li><Link to="/contact">Contact Us</Link></li>
             </ul>
             <div className="nav-actions">
-              <Link to="/login" className="btn btn-outline" style={{ border: '1px solid var(--primary)', padding: '0.6rem 1.2rem', borderRadius: '50px', textDecoration: 'none', marginRight: '1rem', fontWeight: 600 }}>Portal Login</Link>
               <Link to="/admission" className="btn btn-yellow">Apply Now</Link>
             </div>
           </nav>
