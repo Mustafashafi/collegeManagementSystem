@@ -111,12 +111,13 @@ function App() {
           <Route path="/about" element={<PublicAbout />} />
           <Route path="/events" element={<PublicEvents />} />
           <Route path="/admission" element={<PublicAdmission />} />
+          <Route path="/apply" element={<AdmissionForm />} />
           <Route path="/contact" element={<PublicContact />} />
         </Route>
 
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/apply" element={<AdmissionForm />} />
+
 
         {/* Admin Routes (LOGIN REQUIRED - ROLE: admin) */}
         <Route
