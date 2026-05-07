@@ -110,7 +110,7 @@ const CRMLeadProfile = () => {
       }
     } catch (err) {
       console.error('Error sending email:', err);
-      toast.error('Error connecting to email server.');
+      toast.error(`Connection Error: ${err.message || 'Cannot reach backend'}. See console.`);
     } finally {
       setIsSending(false);
     }
