@@ -1,56 +1,87 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import API_BASE_URL from '../config/api';
+
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const CRMDashboard = () => {
   const [leads, setLeads] = useState([]);
+  const [applicationsList, setApplicationsList] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchLeads = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/leads');
-        const data = await response.json();
-        setLeads(data);
+        const [leadsRes, appsRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/leads`),
+          fetch(`${API_BASE_URL}/applications`)
+        ]);
+        
+        const leadsData = await leadsRes.json();
+        const appsData = await appsRes.json();
+        
+        setLeads(leadsData);
+        setApplicationsList(appsData);
       } catch (err) {
-        console.error('Error fetching leads:', err);
+        console.error('Error fetching dashboard data:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchLeads();
+    fetchData();
   }, []);
+
+  // Prepare Chart Data (Group by date)
+  const getChartData = () => {
+    const last7Days = [...Array(7)].map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      return d.toLocaleDateString();
+    }).reverse();
+
+    return last7Days.map(date => {
+      const inquiryCount = leads.filter(l => new Date(l.added).toLocaleDateString() === date).length;
+      const appCount = applicationsList.filter(a => new Date(a.appliedDate).toLocaleDateString() === date).length;
+      return { name: date.split('/')[1] + '/' + date.split('/')[0], inquiries: inquiryCount, applications: appCount };
+    });
+  };
+
+  const chartData = getChartData();
 
   // Calculate dynamic stats
   const totalInquiries = leads.length;
   const activeLeads = leads.filter(l => l.status !== 'Lost').length;
-  const applications = leads.filter(l => l.status === 'Application Submitted').length;
+  const totalApps = applicationsList.length; 
   const contactedLeads = leads.filter(l => l.status === 'Contacted' || l.status === 'Interested' || l.status === 'Application Submitted').length;
   const interestedLeads = leads.filter(l => l.status === 'Interested' || l.status === 'Application Submitted').length;
 
   const stats = [
     { label: "Total Inquiries", value: totalInquiries, icon: "fas fa-users", desc: "Total leads captured" },
     { label: "Active Leads", value: activeLeads, icon: "fas fa-user-clock", desc: "Currently in pipeline" },
-    { label: "Applications", value: applications, icon: "fas fa-file-alt", desc: "Submitted applications" },
+    { label: "Applications", value: totalApps, icon: "fas fa-file-alt", desc: "Total submitted & enrolled" },
     { label: "Conversion Progress", value: contactedLeads, icon: "fas fa-chart-line", color: "#10b981", desc: "Leads contacted/processed" },
   ];
 
-  // Dynamic Funnel Data
-  const funnelData = [
-    { label: "Total Inquiries", value: totalInquiries, height: totalInquiries > 0 ? "100%" : "0%", opacity: 0.2 },
-    { label: "Contacted", value: contactedLeads, height: totalInquiries > 0 ? `${(contactedLeads / totalInquiries) * 100}%` : "0%", opacity: 0.4 },
-    { label: "Interested", value: interestedLeads, height: totalInquiries > 0 ? `${(interestedLeads / totalInquiries) * 100}%` : "0%", opacity: 0.6 },
-    { label: "Applied", value: applications, height: totalInquiries > 0 ? `${(applications / totalInquiries) * 100}%` : "0%", opacity: 1.0 },
-  ];
-
-  // Recent Activity from real leads
-  const activities = leads.slice(0, 4).map(lead => ({
+  // Recent Activity merged
+  const recentLeads = leads.slice(0, 3).map(lead => ({
     type: lead.status === 'New Inquiry' ? 'New Inquiry' : 'Status Updated',
     desc: `${lead.firstName} ${lead.lastName} - ${lead.program}`,
     time: new Date(lead.added).toLocaleDateString(),
     icon: lead.status === 'New Inquiry' ? "fas fa-user-plus" : "fas fa-sync-alt",
-    bg: lead.status === 'Application Submitted' ? "#dcfce7" : "#f1f5f9",
-    color: lead.status === 'Application Submitted' ? "#166534" : "var(--primary)"
+    bg: "#f1f5f9",
+    color: "var(--primary)"
   }));
+
+  const recentApps = applicationsList.slice(0, 2).map(app => ({
+    type: app.status === 'Enrolled' ? 'Student Enrolled' : 'New Application',
+    desc: `${app.firstName} ${app.lastName} - ${app.program}`,
+    time: new Date(app.appliedDate).toLocaleDateString(),
+    icon: app.status === 'Enrolled' ? "fas fa-user-check" : "fas fa-file-invoice",
+    bg: app.status === 'Enrolled' ? "#dcfce7" : "#eff6ff",
+    color: app.status === 'Enrolled' ? "#166534" : "#2563eb"
+  }));
+
+  const activities = [...recentApps, ...recentLeads].sort((a, b) => new Date(b.time) - new Date(a.time));
 
   if (loading) {
     return (
@@ -67,7 +98,6 @@ const CRMDashboard = () => {
           <h1>CRM Dashboard</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>Overview of admissions and lead pipeline.</p>
         </div>
-
       </div>
 
       <div className="stats-grid">
@@ -88,17 +118,28 @@ const CRMDashboard = () => {
       <div className="grid-2">
         <div className="panel">
           <div className="panel-header">
-            <h3>Conversion Funnel</h3>
+            <h3>Enrollment Trends</h3>
           </div>
-          <div className="panel-body" style={{ padding: '20px' }}>
-            <div className="chart-container">
-              {funnelData.map((item, idx) => (
-                <div className="bar-col" key={idx}>
-                  <div className="bar" style={{ height: item.height, opacity: item.opacity }}></div>
-                  <div className="bar-label" dangerouslySetInnerHTML={{ __html: `${item.label}<br>(${item.value})` }}></div>
-                </div>
-              ))}
-            </div>
+          <div className="panel-body" style={{ padding: '20px', height: '300px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorInq" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#64748b'}} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#64748b'}} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  itemStyle={{ fontSize: '12px', fontWeight: 600 }}
+                />
+                <Area type="monotone" dataKey="inquiries" stroke="#2563eb" strokeWidth={2} fillOpacity={1} fill="url(#colorInq)" />
+                <Area type="monotone" dataKey="applications" stroke="#10b981" strokeWidth={2} fillOpacity={0} />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 

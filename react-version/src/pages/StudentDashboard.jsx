@@ -1,29 +1,105 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import API_BASE_URL from '../config/api';
 
 const StudentDashboard = () => {
+  const [profile, setProfile] = useState(null);
+  const [fees, setFees] = useState([]);
+  const [attendance, setAttendance] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [results, setResults] = useState([]);
+  const [timetable, setTimetable] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [profileRes, feesRes, attRes, asgnRes, resRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/students/profile/${user.email}`),
+          fetch(`${API_BASE_URL}/students/fees/${user.email}`),
+          fetch(`${API_BASE_URL}/students/attendance/${user.email}`),
+          fetch(`${API_BASE_URL}/students/assignments/${user.email}`),
+          fetch(`${API_BASE_URL}/students/results/${user.email}`)
+        ]);
+        
+        const profileData = await profileRes.json();
+        const feesData = await feesRes.json();
+        const attData = await attRes.json();
+        const asgnData = await asgnRes.json();
+        const resData = await resRes.json();
+
+        setProfile(profileData);
+        setFees(feesData);
+        setAttendance(attData);
+        setAssignments(asgnData);
+        setResults(resData);
+
+        if (profileData && profileData.program) {
+          const ttRes = await fetch(`${API_BASE_URL}/students/timetable/${profileData.program}`);
+          const ttData = await ttRes.json();
+          setTimetable(ttData);
+        }
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (user.email) fetchData();
+  }, [user.email]);
+
+  const currentDay = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date());
+  const todayClasses = timetable.filter(t => t.day === currentDay);
+
+  // Attendance Rate calculation
+  const totalClasses = attendance.length;
+  const presentClasses = attendance.filter(a => a.status === 'Present').length;
+  const attendanceRate = totalClasses > 0 ? ((presentClasses / totalClasses) * 100).toFixed(1) : '0';
+
+  // Pending Assignments calculation
+  const pendingAssignmentsCount = assignments.filter(a => a.status === 'Pending').length;
+
+  // GPA calculation (Simplified: mapping grades to points)
+  const gradePoints = { 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'D': 1.0, 'F': 0.0 };
+  const totalPoints = results.reduce((acc, r) => acc + (gradePoints[r.grade] || 0), 0);
+  const gpa = results.length > 0 ? (totalPoints / results.length).toFixed(2) : '0.00';
+
+  const pendingFees = fees.filter(f => f.status === 'Pending');
+  const totalPending = pendingFees.reduce((acc, f) => acc + f.amount, 0);
+  const nextDueDate = pendingFees.length > 0 ? new Date(pendingFees[0].dueDate).toLocaleDateString() : 'N/A';
+
+  if (loading) {
+    return (
+      <div className="dashboard-content" style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
+        <i className="fas fa-spinner fa-spin" style={{ fontSize: '30px' }}></i>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-content">
       <div className="page-header">
-        <h1>Student Overview</h1>
+        <h1>Welcome, {user.name || 'Student'}!</h1>
+        <p style={{ color: '#6b7280', fontSize: '14px' }}>Here is your academic overview for today.</p>
       </div>
 
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-label" style={{ fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600, marginBottom: '8px' }}>Attendance Rate</div>
-          <div className="stat-val" style={{ fontSize: '24px', fontWeight: 700 }}>94.5%</div>
+          <div className="stat-val" style={{ fontSize: '24px', fontWeight: 700 }}>{attendanceRate}%</div>
         </div>
         <div className="stat-card">
           <div className="stat-label" style={{ fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600, marginBottom: '8px' }}>Pending Assignments</div>
-          <div className="stat-val" style={{ fontSize: '24px', fontWeight: 700 }}>3</div>
+          <div className="stat-val" style={{ fontSize: '24px', fontWeight: 700 }}>{pendingAssignmentsCount}</div>
         </div>
         <div className="stat-card">
           <div className="stat-label" style={{ fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600, marginBottom: '8px' }}>Current GPA</div>
-          <div className="stat-val" style={{ fontSize: '24px', fontWeight: 700 }}>3.82</div>
+          <div className="stat-val" style={{ fontSize: '24px', fontWeight: 700 }}>{gpa}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label" style={{ fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600, marginBottom: '8px' }}>Books Borrowed</div>
-          <div className="stat-val" style={{ fontSize: '24px', fontWeight: 700 }}>2</div>
+          <div className="stat-label" style={{ fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600, marginBottom: '8px' }}>Program</div>
+          <div className="stat-val" style={{ fontSize: '18px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{profile?.program || 'Enrolled'}</div>
         </div>
       </div>
 
@@ -33,38 +109,40 @@ const StudentDashboard = () => {
             <h3>Recent Assignments</h3>
             <Link to="/student/assignments" style={{ fontSize: '12px', color: '#1a1a1a', fontWeight: 600 }}>View All</Link>
           </div>
-          <div className="list-item" style={{ padding: '14px 20px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div className="list-info">
-              <h4 style={{ fontSize: '14px', fontWeight: 600 }}>Advanced Data Structures</h4>
-              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>Due in 2 days • Prof. Smith</p>
+          {assignments.length === 0 ? (
+            <p style={{ padding: '20px', color: '#6b7280', fontSize: '13px' }}>No assignments found.</p>
+          ) : assignments.slice(0, 2).map((asgn, idx) => (
+            <div key={idx} className="list-item" style={{ padding: '14px 20px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="list-info">
+                <h4 style={{ fontSize: '14px', fontWeight: 600 }}>{asgn.title}</h4>
+                <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>Due: {new Date(asgn.dueDate).toLocaleDateString()} • {asgn.teacher}</p>
+              </div>
+              <span className="badge" style={{ 
+                padding: '4px 8px', 
+                borderRadius: '6px', 
+                fontSize: '11px', 
+                fontWeight: 600, 
+                background: asgn.status === 'Pending' ? '#fff7ed' : '#dcfce7', 
+                color: asgn.status === 'Pending' ? '#9a3412' : '#166534' 
+              }}>{asgn.status}</span>
             </div>
-            <span className="badge" style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, background: '#dcfce7', color: '#166534' }}>Action Required</span>
-          </div>
-          <div className="list-item" style={{ padding: '14px 20px', borderBottom: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div className="list-info">
-              <h4 style={{ fontSize: '14px', fontWeight: 600 }}>Network Security Quiz</h4>
-              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>Due in 4 days • Dr. Doe</p>
-            </div>
-            <span className="badge" style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, background: '#dcfce7', color: '#166534' }}>Upcoming</span>
-          </div>
+          ))}
         </div>
 
         <div className="panel">
           <div className="panel-header">
             <h3>Today's Classes</h3>
           </div>
-          <div className="list-item" style={{ padding: '14px 20px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div className="list-info">
-              <h4 style={{ fontSize: '14px', fontWeight: 600 }}>CS 302 - Algorithms</h4>
-              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>09:00 AM - 10:30 AM • Room 102</p>
+          {todayClasses.length === 0 ? (
+            <p style={{ padding: '20px', color: '#6b7280', fontSize: '13px' }}>No classes scheduled for today ({currentDay}).</p>
+          ) : todayClasses.map((cls, idx) => (
+            <div key={idx} className="list-item" style={{ padding: '14px 20px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="list-info">
+                <h4 style={{ fontSize: '14px', fontWeight: 600 }}>{cls.subject}</h4>
+                <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>{cls.time} • {cls.room}</p>
+              </div>
             </div>
-          </div>
-          <div className="list-item" style={{ padding: '14px 20px', borderBottom: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div className="list-info">
-              <h4 style={{ fontSize: '14px', fontWeight: 600 }}>MAT 201 - Discrete Math</h4>
-              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>11:00 AM - 12:30 PM • Room 204</p>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
@@ -75,16 +153,20 @@ const StudentDashboard = () => {
         </div>
         <div style={{ padding: '20px', display: 'flex', gap: '40px', alignItems: 'center' }}>
           <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 700, marginBottom: '5px' }}>Total Payable</p>
-            <p style={{ fontSize: '18px', fontWeight: 700 }}>$1,200.00</p>
+            <p style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 700, marginBottom: '5px' }}>Pending Amount</p>
+            <p style={{ fontSize: '18px', fontWeight: 700 }}>${totalPending.toLocaleString()}</p>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 700, marginBottom: '5px' }}>Due Date</p>
-            <p style={{ fontSize: '18px', fontWeight: 700, color: '#b91c1c' }}>Nov 15, 2026</p>
+            <p style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 700, marginBottom: '5px' }}>Next Due Date</p>
+            <p style={{ fontSize: '18px', fontWeight: 700, color: totalPending > 0 ? '#b91c1c' : '#166534' }}>{nextDueDate}</p>
           </div>
-          <div style={{ flex: 1, padding: '15px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <i className="fas fa-exclamation-triangle" style={{ color: '#d97706' }}></i>
-            <p style={{ fontSize: '13px', color: '#92400e' }}>You have a pending tuition fee of <strong>$1,200.00</strong> for Term 2. Please ensure payment is made by the due date.</p>
+          <div style={{ flex: 1, padding: '15px', background: totalPending > 0 ? '#fffbeb' : '#f0fdf4', border: totalPending > 0 ? '1px solid #fde68a' : '1px solid #bcf0da', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <i className={`fas ${totalPending > 0 ? 'fa-exclamation-triangle' : 'fa-check-circle'}`} style={{ color: totalPending > 0 ? '#d97706' : '#166534' }}></i>
+            <p style={{ fontSize: '13px', color: totalPending > 0 ? '#92400e' : '#166534' }}>
+              {totalPending > 0 
+                ? `You have a pending tuition fee of $${totalPending.toLocaleString()}. Please ensure payment is made by the due date.`
+                : `All your fees are currently up to date. Thank you!`}
+            </p>
           </div>
         </div>
       </div>

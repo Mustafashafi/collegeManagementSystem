@@ -11,7 +11,10 @@ const connectDB = require('./config/db');
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173', // Allow local dev and production URL
+    credentials: true
+}));
 app.use(express.json());
 
 if (!process.env.MONGODB_URI) {
@@ -25,10 +28,15 @@ if (!process.env.MONGODB_URI) {
 // Connect to Database
 connectDB();
 
+// Serve Uploaded Files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/leads', require('./routes/leads'));
 app.use('/api/email', require('./routes/email'));
+app.use('/api/applications', require('./routes/applications'));
+app.use('/api/students', require('./routes/students'));
 
 app.get('/', (req, res) => {
     res.send("College ERP Backend is running...");

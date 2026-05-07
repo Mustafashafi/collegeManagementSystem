@@ -1,67 +1,78 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
+import API_BASE_URL from '../config/api';
 
 const StudentTimetable = () => {
+  const [timetable, setTimetable] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const profileRes = await fetch(`${API_BASE_URL}/students/profile/${user.email}`);
+        const profileData = await profileRes.json();
+        setProfile(profileData);
+
+        if (profileData && profileData.program) {
+          const timetableRes = await fetch(`${API_BASE_URL}/students/timetable/${profileData.program}`);
+          const timetableData = await timetableRes.json();
+          setTimetable(timetableData);
+        }
+      } catch (err) {
+        console.error('Error fetching timetable:', err);
+        toast.error("Failed to load timetable.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (user.email) fetchData();
+  }, [user.email]);
+
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  if (loading) {
+    return (
+      <div className="dashboard-content" style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
+        <i className="fas fa-spinner fa-spin" style={{ fontSize: '30px' }}></i>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-content">
       <div className="page-header" style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Weekly Academic Timetable</h1>
-        <div style={{ fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}><i className="fas fa-print"></i> Print</div>
+        <div>
+          <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Weekly Academic Timetable</h1>
+          <p style={{ color: '#6b7280', fontSize: '14px' }}>Program: {profile?.program || 'N/A'}</p>
+        </div>
       </div>
 
-      <div className="timetable-grid" style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '100px repeat(5, 1fr)', 
-        gap: '1px', 
-        background: '#e5e7eb', 
-        border: '1px solid #e5e7eb', 
-        borderRadius: '12px', 
-        overflow: 'hidden' 
-      }}>
-        <div className="grid-header" style={{ background: '#f9fafb', padding: '15px', textAlign: 'center', fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', color: '#6b7280' }}>Time</div>
-        <div className="grid-header" style={{ background: '#f9fafb', padding: '15px', textAlign: 'center', fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', color: '#6b7280' }}>Monday</div>
-        <div className="grid-header" style={{ background: '#f9fafb', padding: '15px', textAlign: 'center', fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', color: '#6b7280' }}>Tuesday</div>
-        <div className="grid-header" style={{ background: '#f9fafb', padding: '15px', textAlign: 'center', fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', color: '#6b7280' }}>Wednesday</div>
-        <div className="grid-header" style={{ background: '#f9fafb', padding: '15px', textAlign: 'center', fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', color: '#6b7280' }}>Thursday</div>
-        <div className="grid-header" style={{ background: '#f9fafb', padding: '15px', textAlign: 'center', fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', color: '#6b7280' }}>Friday</div>
-
-        <div className="time-col" style={{ background: '#f9fafb', padding: '15px', textAlign: 'center', fontSize: '11px', fontWeight: 600, color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>09:00 AM</div>
-        <div className="slot" style={{ background: '#fff', padding: '15px', minHeight: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div className="class-box" style={{ background: '#f1f5f9', borderLeft: '4px solid #1a1a1a', padding: '10px', borderRadius: '4px' }}>
-            <h4 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>Algorithms</h4>
-            <p style={{ fontSize: '11px', color: '#6b7280' }}>Room 102</p>
-          </div>
-        </div>
-        <div className="slot" style={{ background: '#fff', padding: '15px', minHeight: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}></div>
-        <div className="slot" style={{ background: '#fff', padding: '15px', minHeight: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div className="class-box" style={{ background: '#f1f5f9', borderLeft: '4px solid #1a1a1a', padding: '10px', borderRadius: '4px' }}>
-            <h4 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>Algorithms</h4>
-            <p style={{ fontSize: '11px', color: '#6b7280' }}>Room 102</p>
-          </div>
-        </div>
-        <div className="slot" style={{ background: '#fff', padding: '15px', minHeight: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}></div>
-        <div className="slot" style={{ background: '#fff', padding: '15px', minHeight: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div className="class-box" style={{ background: '#f1f5f9', borderLeft: '4px solid #1a1a1a', padding: '10px', borderRadius: '4px' }}>
-            <h4 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>CS Lab</h4>
-            <p style={{ fontSize: '11px', color: '#6b7280' }}>Lab 4</p>
-          </div>
-        </div>
-
-        <div className="time-col" style={{ background: '#f9fafb', padding: '15px', textAlign: 'center', fontSize: '11px', fontWeight: 600, color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>11:00 AM</div>
-        <div className="slot" style={{ background: '#fff', padding: '15px', minHeight: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}></div>
-        <div className="slot" style={{ background: '#fff', padding: '15px', minHeight: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div className="class-box" style={{ background: '#f1f5f9', borderLeft: '4px solid #1a1a1a', padding: '10px', borderRadius: '4px' }}>
-            <h4 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>Discrete Math</h4>
-            <p style={{ fontSize: '11px', color: '#6b7280' }}>Room 204</p>
-          </div>
-        </div>
-        <div className="slot" style={{ background: '#fff', padding: '15px', minHeight: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}></div>
-        <div className="slot" style={{ background: '#fff', padding: '15px', minHeight: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div className="class-box" style={{ background: '#f1f5f9', borderLeft: '4px solid #1a1a1a', padding: '10px', borderRadius: '4px' }}>
-            <h4 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>Discrete Math</h4>
-            <p style={{ fontSize: '11px', color: '#6b7280' }}>Room 204</p>
-          </div>
-        </div>
-        <div className="slot" style={{ background: '#fff', padding: '15px', minHeight: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}></div>
+      <div className="timetable-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+        {days.map(day => {
+          const dayClasses = timetable.filter(t => t.day === day);
+          return (
+            <div key={day} className="day-panel" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
+              <div className="day-header" style={{ background: '#f8fafc', padding: '12px 20px', borderBottom: '1px solid #e5e7eb', fontWeight: 700, fontSize: '14px' }}>
+                {day}
+              </div>
+              <div className="day-body" style={{ padding: '10px' }}>
+                {dayClasses.length === 0 ? (
+                  <p style={{ padding: '10px', color: '#6b7280', fontSize: '12px', textAlign: 'center' }}>No classes scheduled.</p>
+                ) : dayClasses.map((item, idx) => (
+                  <div key={idx} style={{ padding: '12px', borderBottom: idx !== dayClasses.length - 1 ? '1px solid #f1f5f9' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <h4 style={{ fontSize: '14px', fontWeight: 600 }}>{item.subject}</h4>
+                      <p style={{ fontSize: '12px', color: '#6b7280' }}>{item.time} • {item.room}</p>
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#1a1a1a', background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px' }}>{item.teacher}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

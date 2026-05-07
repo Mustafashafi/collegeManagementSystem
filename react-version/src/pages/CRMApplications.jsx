@@ -1,18 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import API_BASE_URL from '../config/api';
 
 const CRMApplications = () => {
   const navigate = useNavigate();
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedApps, setSelectedApps] = useState([]);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
-  const applications = [
-    { id: 1, appId: "APP-2026-001", name: "Emily Smith", program: "B.Sc Computer Science", date: "Oct 24, 2026", status: "Submitted", statusClass: "status-submitted", action: "Review" },
-    { id: 2, appId: "APP-2026-002", name: "Michael Johnson", program: "Business Administration", date: "Oct 23, 2026", status: "Under Review", statusClass: "status-review", action: "Continue Review" },
-    { id: 3, appId: "APP-2026-003", name: "Sarah Williams", program: "Engineering (Mechanical)", date: "Oct 20, 2026", status: "Approved", statusClass: "status-approved", enrollable: true },
-    { id: 4, appId: "APP-2026-004", name: "James Brown", program: "B.Sc Computer Science", date: "Oct 19, 2026", status: "Approved", statusClass: "status-approved", enrollable: true },
-  ];
+  useEffect(() => {
+    fetchApplications();
+  }, []);
+
+  const fetchApplications = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/applications`);
+      const data = await response.json();
+
+      const formattedApps = data.map(app => ({
+        ...app,
+        id: app._id,
+        name: `${app.firstName} ${app.lastName}`,
+        date: new Date(app.appliedDate).toLocaleDateString(),
+        enrollable: app.status === 'Approved'
+      }));
+      setApplications(formattedApps);
+    } catch (err) {
+      console.error('Error fetching applications:', err);
+      toast.error('Failed to load applications.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleSelection = (id) => {
     setSelectedApps(prev =>
@@ -24,6 +45,25 @@ const CRMApplications = () => {
     return applications.filter(a => selectedApps.includes(a.id));
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to PERMANENTLY delete this application from the database?")) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/applications/${id}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success("Application deleted from database.");
+        setApplications(prev => prev.filter(app => app.id !== id));
+      } else {
+        toast.error(data.msg || "Failed to delete.");
+      }
+    } catch (err) {
+      toast.error("Error connecting to server.");
+    }
+  };
+
   return (
     <div className="dashboard-content">
       <div className="page-header">
@@ -31,9 +71,7 @@ const CRMApplications = () => {
           <h1>Admission Applications</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>Review and process submitted applications.</p>
         </div>
-        <button className="btn-primary" onClick={() => navigate('/crm/applications/add')}>
-          <i className="fas fa-plus"></i> New Admission
-        </button>
+
       </div>
 
       {selectedApps.length > 0 && (
@@ -67,7 +105,7 @@ const CRMApplications = () => {
           <thead>
             <tr>
               <th className="checkbox-col">
-                <input type="checkbox" onChange={(e) => e.target.checked ? setSelectedApps(applications.map(a => a.id)) : setSelectedApps([])} checked={selectedApps.length === applications.length} />
+                <input type="checkbox" onChange={(e) => e.target.checked ? setSelectedApps(applications.map(a => a.id)) : setSelectedApps([])} checked={selectedApps.length === applications.length && applications.length > 0} />
               </th>
               <th>Application ID</th>
               <th>Applicant Name</th>
@@ -78,7 +116,20 @@ const CRMApplications = () => {
             </tr>
           </thead>
           <tbody>
-            {applications.map((app) => (
+            {loading ? (
+              <tr>
+                <td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>
+                  <i className="fas fa-spinner fa-spin" style={{ marginRight: '10px' }}></i>
+                  Loading applications...
+                </td>
+              </tr>
+            ) : applications.length === 0 ? (
+              <tr>
+                <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                  No applications found.
+                </td>
+              </tr>
+            ) : applications.map((app) => (
               <tr key={app.id}>
                 <td className="checkbox-col">
                   <input type="checkbox" checked={selectedApps.includes(app.id)} onChange={() => toggleSelection(app.id)} />
@@ -87,18 +138,22 @@ const CRMApplications = () => {
                 <td>{app.name}</td>
                 <td>{app.program}</td>
                 <td>{app.date}</td>
-                <td><span style={{
-                  display: 'inline-block',
-                  textAlign: 'center',
-                  whiteSpace: 'nowrap',  // ✅ Prevent line break
-
-                }} className={`status-badge ${app.statusClass}`}>{app.status}</span></td>
+                <td><span style={{ display: 'inline-block', textAlign: 'center', whiteSpace: 'nowrap' }} className={`status-badge ${app.statusClass}`}>{app.status}</span></td>
                 <td>
-                  {app.enrollable ? (
-                    <button className="btn-sm" style={{ background: '#1a1a1a', color: '#fff', borderColor: '#1a1a1a' }}>Enroll Student</button>
-                  ) : (
-                    <button className="btn-sm" onClick={() => navigate('/crm/applications/review')}>{app.action}</button>
-                  )}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {app.enrollable ? (
+                      <button className="btn-sm" style={{ background: '#1a1a1a', color: '#fff', borderColor: '#1a1a1a' }}>Enroll Student</button>
+                    ) : (
+                      <button className="btn-sm" onClick={() => navigate('/crm/applications/review', { state: { application: app } })}>Review</button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(app.id)}
+                      style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px', fontSize: '16px' }}
+                      title="Delete Application"
+                    >
+                      <i className="fas fa-trash-alt"></i>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

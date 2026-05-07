@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import API_BASE_URL from '../config/api';
 
 const CRMLeads = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const CRMLeads = () => {
 
   const fetchLeads = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/leads');
+      const response = await fetch(`${API_BASE_URL}/leads`);
       const data = await response.json();
       
       const formattedLeads = data.map(lead => ({
@@ -78,7 +79,7 @@ const CRMLeads = () => {
     const recipients = getSelectedLeads().map(l => ({ email: l.email, name: l.name }));
 
     try {
-      const response = await fetch('http://localhost:5000/api/email/send', {
+      const response = await fetch(`${API_BASE_URL}/email/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -93,14 +94,18 @@ const CRMLeads = () => {
       if (data.success) {
         toast.success(`Emails sent successfully to ${data.sent} leads!`);
         
-        // Update status for all recipients
-        const updatePromises = selectedLeads.map(id => 
-          fetch(`http://localhost:5000/api/leads/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'Contacted' })
-          })
-        );
+        // Only update status to 'Contacted' if current status is 'New Inquiry'
+        const updatePromises = selectedLeads.map(id => {
+          const lead = leads.find(l => l.id === id);
+          if (lead && lead.status === 'New Inquiry') {
+            return fetch(`${API_BASE_URL}/leads/${id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'Contacted' })
+            });
+          }
+          return Promise.resolve();
+        });
         
         await Promise.all(updatePromises);
         
@@ -125,7 +130,7 @@ const CRMLeads = () => {
     if (!window.confirm('Are you sure you want to delete this lead?')) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/leads/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/leads/${id}`, {
         method: 'DELETE'
       });
       const data = await response.json();

@@ -1,23 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
+import API_BASE_URL from '../config/api';
 
 const StudentFees = () => {
+  const [fees, setFees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  useEffect(() => {
+    const fetchFees = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/students/fees/${user.email}`);
+        const data = await response.json();
+        setFees(data);
+      } catch (err) {
+        console.error('Error fetching fees:', err);
+        toast.error("Failed to load fee records.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (user.email) fetchFees();
+  }, [user.email]);
+
+  const totalAmount = fees.reduce((acc, fee) => acc + fee.amount, 0);
+  const totalPaid = fees.filter(f => f.status === 'Paid').reduce((acc, fee) => acc + fee.amount, 0);
+  const totalPending = totalAmount - totalPaid;
+
   const summaryItems = [
-    { label: "Total Fees", value: "$3,600.00", icon: "fas fa-file-invoice", iconClass: "icon-total", bg: "#eff6ff", color: "#1d4ed8" },
-    { label: "Total Paid", value: "$2,400.00", icon: "fas fa-check-circle", iconClass: "icon-paid", bg: "#f0fdf4", color: "#15803d" },
-    { label: "Total Pending", value: "$1,200.00", icon: "fas fa-clock", iconClass: "icon-pending", bg: "#fff7ed", color: "#c2410c" },
+    { label: "Total Fees", value: `$${totalAmount.toLocaleString()}`, icon: "fas fa-file-invoice", iconClass: "icon-total", bg: "#eff6ff", color: "#1d4ed8" },
+    { label: "Total Paid", value: `$${totalPaid.toLocaleString()}`, icon: "fas fa-check-circle", iconClass: "icon-paid", bg: "#f0fdf4", color: "#15803d" },
+    { label: "Total Pending", value: `$${totalPending.toLocaleString()}`, icon: "fas fa-clock", iconClass: "icon-pending", bg: "#fff7ed", color: "#c2410c" },
   ];
 
-  const currentFees = [
-    { id: "#INV-2026-11", desc: "Term 2 Tuition Fee", amount: "$1,200.00", due: "Nov 15, 2026", status: "Pending" },
-    { id: "#INV-2026-04", desc: "Term 1 Tuition Fee", amount: "$1,200.00", due: "Aug 10, 2026", status: "Paid" },
-    { id: "#INV-2026-05", desc: "Library Fine", amount: "$15.00", due: "Sep 05, 2026", status: "Paid" },
-    { id: "#INV-2026-02", desc: "Annual Sports Fee", amount: "$50.00", due: "Mar 15, 2026", status: "Paid" },
-  ];
-
-  const transactions = [
-    { date: "Aug 10, 2026", id: "TXN-982341", desc: "Term 1 Tuition Fee", amount: "$1,200.00", method: "Online Payment" },
-    { date: "Sep 05, 2026", id: "TXN-982567", desc: "Library Fine", amount: "$15.00", method: "Campus Desk" },
-  ];
+  if (loading) {
+    return (
+      <div className="dashboard-content" style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
+        <i className="fas fa-spinner fa-spin" style={{ fontSize: '30px' }}></i>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-content">
@@ -55,12 +77,16 @@ const StudentFees = () => {
               </tr>
             </thead>
             <tbody>
-              {currentFees.map((fee, idx) => (
+              {fees.length === 0 ? (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: '#6b7280' }}>No fee records found.</td>
+                </tr>
+              ) : fees.map((fee, idx) => (
                 <tr key={idx}>
-                  <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>{fee.id}</td>
-                  <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>{fee.desc}</td>
-                  <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>{fee.amount}</td>
-                  <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>{fee.due}</td>
+                  <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>{fee.invoiceId}</td>
+                  <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>{fee.description}</td>
+                  <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>${fee.amount.toLocaleString()}</td>
+                  <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>{new Date(fee.dueDate).toLocaleDateString()}</td>
                   <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>
                     <span className={`badge-status ${fee.status === 'Paid' ? 'status-paid' : 'status-pending'}`} style={{ 
                       padding: '4px 8px', 
@@ -73,36 +99,6 @@ const StudentFees = () => {
                       {fee.status}
                     </span>
                   </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="panel" style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden', marginBottom: '24px' }}>
-        <div className="panel-header" style={{ padding: '20px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 600 }}>Recent Transactions</h3>
-        </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={{ padding: '14px 20px', textAlign: 'left', fontSize: '11px', background: '#f9fafb', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', borderBottom: '1px solid #e5e7eb' }}>Date</th>
-                <th style={{ padding: '14px 20px', textAlign: 'left', fontSize: '11px', background: '#f9fafb', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', borderBottom: '1px solid #e5e7eb' }}>Transaction ID</th>
-                <th style={{ padding: '14px 20px', textAlign: 'left', fontSize: '11px', background: '#f9fafb', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', borderBottom: '1px solid #e5e7eb' }}>Description</th>
-                <th style={{ padding: '14px 20px', textAlign: 'left', fontSize: '11px', background: '#f9fafb', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', borderBottom: '1px solid #e5e7eb' }}>Amount</th>
-                <th style={{ padding: '14px 20px', textAlign: 'left', fontSize: '11px', background: '#f9fafb', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', borderBottom: '1px solid #e5e7eb' }}>Method</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((txn, idx) => (
-                <tr key={idx}>
-                  <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>{txn.date}</td>
-                  <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>{txn.id}</td>
-                  <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>{txn.desc}</td>
-                  <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>{txn.amount}</td>
-                  <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>{txn.method}</td>
                 </tr>
               ))}
             </tbody>
