@@ -3,17 +3,22 @@ const router = express.Router();
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  service: 'gmail',
   auth: {
     user: (process.env.EMAIL_USER || '').replace(/\s/g, ''),
     pass: (process.env.EMAIL_PASS || '').replace(/\s/g, ''),
   },
-  // Optimize connection pooling
   pool: true,
-  maxConnections: 5,
-  maxMessages: 100
+  maxConnections: 3
+});
+
+// Verify connection on startup
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('📧 Email Transporter Error:', error.message);
+  } else {
+    console.log('📧 Email Server is ready to take our messages');
+  }
 });
 
 // @route   POST /api/email/send
@@ -82,7 +87,10 @@ router.post('/send', async (req, res) => {
       res.json({ success: true, sent: recipients.length });
     } catch (err) {
       console.error('Email error:', err.message);
-      res.status(500).json({ success: false, msg: 'Failed to send emails.' });
+      res.status(500).json({ 
+        success: false, 
+        msg: `Email failed: ${err.message}. Please check your App Password or Gmail settings.` 
+      });
     }
   }
 });
