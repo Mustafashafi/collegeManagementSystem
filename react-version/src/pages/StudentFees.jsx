@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { API_BASE_URL } from '../config/api';
 
 const StudentFees = () => {
   const [fees, setFees] = useState([]);
@@ -9,7 +10,7 @@ const StudentFees = () => {
   useEffect(() => {
     const fetchFees = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/students/fees/${user.email}`);
+        const response = await fetch(`${API_BASE_URL}/api/students/fees/${user.email}`);
         const data = await response.json();
         setFees(data);
       } catch (err) {
