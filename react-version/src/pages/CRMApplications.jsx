@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { API_BASE_URL } from '../config/api';
 
 const CRMApplications = () => {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ const CRMApplications = () => {
 
   const fetchApplications = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/applications');
+      const response = await fetch(`${API_BASE_URL}/api/applications`);
       const data = await response.json();
 
       const formattedApps = data.map(app => ({
@@ -48,7 +49,7 @@ const CRMApplications = () => {
     if (!window.confirm("Are you sure you want to PERMANENTLY delete this application from the database?")) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/applications/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/applications/${id}`, {
         method: 'DELETE'
       });
       const data = await response.json();

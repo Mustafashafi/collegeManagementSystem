@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { API_BASE_URL } from '../config/api';
 
 const StudentDashboard = () => {
   const [profile, setProfile] = useState(null);
@@ -15,11 +16,11 @@ const StudentDashboard = () => {
     const fetchData = async () => {
       try {
         const [profileRes, feesRes, attRes, asgnRes, resRes] = await Promise.all([
-          fetch(`http://localhost:5000/api/students/profile/${user.email}`),
-          fetch(`http://localhost:5000/api/students/fees/${user.email}`),
-          fetch(`http://localhost:5000/api/students/attendance/${user.email}`),
-          fetch(`http://localhost:5000/api/students/assignments/${user.email}`),
-          fetch(`http://localhost:5000/api/students/results/${user.email}`)
+          fetch(`${API_BASE_URL}/api/students/profile/${user.email}`),
+          fetch(`${API_BASE_URL}/api/students/fees/${user.email}`),
+          fetch(`${API_BASE_URL}/api/students/attendance/${user.email}`),
+          fetch(`${API_BASE_URL}/api/students/assignments/${user.email}`),
+          fetch(`${API_BASE_URL}/api/students/results/${user.email}`)
         ]);
         
         const profileData = await profileRes.json();
@@ -35,7 +36,7 @@ const StudentDashboard = () => {
         setResults(resData);
 
         if (profileData && profileData.program) {
-          const ttRes = await fetch(`http://localhost:5000/api/students/timetable/${profileData.program}`);
+          const ttRes = await fetch(`${API_BASE_URL}/api/students/timetable/${profileData.program}`);
           const ttData = await ttRes.json();
           setTimetable(ttData);
         }
