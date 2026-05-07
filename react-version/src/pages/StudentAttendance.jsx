@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { API_BASE_URL } from '../config/api';
 
 const StudentAttendance = () => {
   const [attendance, setAttendance] = useState([]);
@@ -10,7 +9,7 @@ const StudentAttendance = () => {
   useEffect(() => {
     const fetchAttendance = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/students/attendance/${user.email}`);
+        const response = await fetch(`http://localhost:5000/api/students/attendance/${user.email}`);
         const data = await response.json();
         setAttendance(data);
       } catch (err) {
