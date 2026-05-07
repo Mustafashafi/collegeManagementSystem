@@ -65,34 +65,25 @@ router.post('/send', async (req, res) => {
     });
   };
 
-  // If sending to many recipients, return response early and process in background
-  if (recipients.length > 3) {
-    res.json({ success: true, msg: 'Bulk email process started.', sent: recipients.length });
-    
-    // Process in background
-    (async () => {
-      try {
-        for (const recipient of recipients) {
-          await sendEmail(recipient);
-        }
-      } catch (err) {
-        console.error('Background email error:', err.message);
-      }
-    })();
-  } else {
-    // For small batches, wait for results to give immediate feedback
+  // Return success immediately to the frontend
+  res.json({ 
+    success: true, 
+    msg: recipients.length > 1 ? `Process started for ${recipients.length} emails.` : 'Email is being sent.',
+    sent: recipients.length 
+  });
+
+  // Process all emails in the background
+  (async () => {
     try {
-      const sendPromises = recipients.map(sendEmail);
-      await Promise.all(sendPromises);
-      res.json({ success: true, sent: recipients.length });
+      // Use a simple loop to avoid overwhelming the SMTP pool for larger batches
+      for (const recipient of recipients) {
+        await sendEmail(recipient);
+      }
+      console.log(`✅ Successfully sent ${recipients.length} emails in background.`);
     } catch (err) {
-      console.error('Email error:', err.message);
-      res.status(500).json({ 
-        success: false, 
-        msg: `Email failed: ${err.message}. Please check your App Password or Gmail settings.` 
-      });
+      console.error('Background email error:', err.message);
     }
-  }
+  })();
 });
 
 module.exports = router;
