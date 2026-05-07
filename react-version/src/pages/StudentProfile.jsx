@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import API_BASE_URL from '../config/api';
 
 const StudentProfile = () => {
   const [student, setStudent] = useState(null);
@@ -10,7 +9,7 @@ const StudentProfile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/students/profile/${user.email}`);
+        const response = await fetch(`http://localhost:5000/api/students/profile/${user.email}`);
         const data = await response.json();
         if (response.ok) {
           setStudent(data);

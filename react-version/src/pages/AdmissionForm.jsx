@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import toast from 'react-hot-toast';
-import API_BASE_URL from '../config/api';
 
 const AdmissionForm = () => {
   const [formData, setFormData] = useState({
@@ -45,7 +44,7 @@ const AdmissionForm = () => {
     if (transcriptFile) submissionData.append('transcriptDocument', transcriptFile);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/applications`, {
+      const response = await fetch('http://localhost:5000/api/applications', {
         method: 'POST',
         body: submissionData // Fetch handles FormData automatically with multipart/form-data
       });

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import API_BASE_URL from '../config/api';
 
 const StudentTimetable = () => {
   const [timetable, setTimetable] = useState([]);
@@ -11,12 +10,12 @@ const StudentTimetable = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const profileRes = await fetch(`${API_BASE_URL}/students/profile/${user.email}`);
+        const profileRes = await fetch(`http://localhost:5000/api/students/profile/${user.email}`);
         const profileData = await profileRes.json();
         setProfile(profileData);
 
         if (profileData && profileData.program) {
-          const timetableRes = await fetch(`${API_BASE_URL}/students/timetable/${profileData.program}`);
+          const timetableRes = await fetch(`http://localhost:5000/api/students/timetable/${profileData.program}`);
           const timetableData = await timetableRes.json();
           setTimetable(timetableData);
         }

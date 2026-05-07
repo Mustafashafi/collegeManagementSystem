@@ -1,7 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import API_BASE_URL from '../config/api';
 
 const CRMApplicationForm = () => {
   const { state } = useLocation();
@@ -23,7 +22,7 @@ const CRMApplicationForm = () => {
   const handleApprove = async () => {
     setProcessing(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/applications/${app.id}/status`, {
+      const response = await fetch(`http://localhost:5000/api/applications/${app.id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'Approved', statusClass: 'status-approved' })
@@ -43,7 +42,7 @@ const CRMApplicationForm = () => {
   const handleReject = async () => {
     setProcessing(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/applications/${app.id}/status`, {
+      const response = await fetch(`http://localhost:5000/api/applications/${app.id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'Rejected', statusClass: 'status-ended' })
@@ -63,7 +62,7 @@ const CRMApplicationForm = () => {
   const handleEnroll = async () => {
     setProcessing(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/applications/${app.id}/enroll`, {
+      const response = await fetch(`http://localhost:5000/api/applications/${app.id}/enroll`, {
         method: 'POST'
       });
       const data = await response.json();
@@ -86,9 +85,7 @@ const CRMApplicationForm = () => {
       return;
     }
     const filename = path.split('\\').pop().split('/').pop();
-    // Assuming uploads are served from backend URL base (one level up from /api)
-    const backendBase = API_BASE_URL.replace('/api', '');
-    window.open(`${backendBase}/uploads/${filename}`, '_blank');
+    window.open(`http://localhost:5000/uploads/${filename}`, '_blank');
   };
 
   return (

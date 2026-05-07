@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import API_BASE_URL from '../config/api';
 
 const CRMLeadProfile = () => {
   const { state } = useLocation();
@@ -31,7 +30,7 @@ const CRMLeadProfile = () => {
 
   const fetchUpdatedLead = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/leads`);
+      const response = await fetch(`http://localhost:5000/api/leads`);
       const data = await response.json();
       const leadData = data.find(l => l._id === currentLead.id);
       if (leadData) {
@@ -53,7 +52,7 @@ const CRMLeadProfile = () => {
     const statusToUpdate = newStatus || status;
     setUpdating(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/leads/${currentLead.id}`, {
+      const response = await fetch(`http://localhost:5000/api/leads/${currentLead.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: statusToUpdate })
@@ -83,7 +82,7 @@ const CRMLeadProfile = () => {
     const recipients = [{ email: currentLead.email, name: currentLead.name }];
 
     try {
-      const response = await fetch(`${API_BASE_URL}/email/send`, {
+      const response = await fetch('http://localhost:5000/api/email/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

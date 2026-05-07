@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import API_BASE_URL from '../config/api';
 
 const CRMPipeline = () => {
   const navigate = useNavigate();
@@ -21,7 +20,7 @@ const CRMPipeline = () => {
 
   const fetchLeads = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/leads`);
+      const response = await fetch('http://localhost:5000/api/leads');
       const data = await response.json();
       setLeads(data);
     } catch (err) {
@@ -33,7 +32,7 @@ const CRMPipeline = () => {
 
   const handleUpdateStatus = async (leadId, newStatus) => {
     try {
-      await fetch(`${API_BASE_URL}/leads/${leadId}`, {
+      await fetch(`http://localhost:5000/api/leads/${leadId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -54,7 +53,7 @@ const CRMPipeline = () => {
     const recipients = [{ email: selectedLeadForEmail.email, name: `${selectedLeadForEmail.firstName} ${selectedLeadForEmail.lastName}` }];
 
     try {
-      const response = await fetch(`${API_BASE_URL}/email/send`, {
+      const response = await fetch('http://localhost:5000/api/email/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

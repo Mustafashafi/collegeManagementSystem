@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import API_BASE_URL from '../config/api';
 
 const StudentAssignments = () => {
   const navigate = useNavigate();
@@ -12,7 +11,7 @@ const StudentAssignments = () => {
   useEffect(() => {
     const fetchAssignments = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/students/assignments/${user.email}`);
+        const response = await fetch(`http://localhost:5000/api/students/assignments/${user.email}`);
         const data = await response.json();
         setAssignments(data);
       } catch (err) {

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import API_BASE_URL from '../config/api';
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -13,8 +12,8 @@ const CRMDashboard = () => {
     const fetchData = async () => {
       try {
         const [leadsRes, appsRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/leads`),
-          fetch(`${API_BASE_URL}/applications`)
+          fetch('http://localhost:5000/api/leads'),
+          fetch('http://localhost:5000/api/applications')
         ]);
         
         const leadsData = await leadsRes.json();

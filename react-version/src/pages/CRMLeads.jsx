@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import API_BASE_URL from '../config/api';
 
 const CRMLeads = () => {
   const navigate = useNavigate();
@@ -19,7 +18,7 @@ const CRMLeads = () => {
 
   const fetchLeads = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/leads`);
+      const response = await fetch('http://localhost:5000/api/leads');
       const data = await response.json();
       
       const formattedLeads = data.map(lead => ({
@@ -79,7 +78,7 @@ const CRMLeads = () => {
     const recipients = getSelectedLeads().map(l => ({ email: l.email, name: l.name }));
 
     try {
-      const response = await fetch(`${API_BASE_URL}/email/send`, {
+      const response = await fetch('http://localhost:5000/api/email/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -98,7 +97,7 @@ const CRMLeads = () => {
         const updatePromises = selectedLeads.map(id => {
           const lead = leads.find(l => l.id === id);
           if (lead && lead.status === 'New Inquiry') {
-            return fetch(`${API_BASE_URL}/leads/${id}`, {
+            return fetch(`http://localhost:5000/api/leads/${id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ status: 'Contacted' })
@@ -130,7 +129,7 @@ const CRMLeads = () => {
     if (!window.confirm('Are you sure you want to delete this lead?')) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/leads/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/leads/${id}`, {
         method: 'DELETE'
       });
       const data = await response.json();

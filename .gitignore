@@ -1,25 +1,2 @@
-# Dependencies
 node_modules/
-backend/node_modules/
-react-version/node_modules/
-
-# Environment Variables
 .env
-backend/.env
-react-version/.env
-
-# Production Builds
-dist/
-build/
-react-version/dist/
-react-version/build/
-
-# IDE / System Files
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-
-# Backend Specific
-backend/uploads/*
-!backend/uploads/.gitkeep
