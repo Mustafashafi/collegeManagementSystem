@@ -15,6 +15,7 @@ const TeacherAddAssignment = () => {
   });
   const [teacher, setTeacher] = useState(null);
   const [fullSchedule, setFullSchedule] = useState([]);
+  const [assignmentFile, setAssignmentFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -60,14 +61,19 @@ const TeacherAddAssignment = () => {
     }
 
     setIsSubmitting(true);
+    const formDataObj = new FormData();
+    formDataObj.append('title', formData.title);
+    formDataObj.append('program', formData.program);
+    formDataObj.append('dueDate', formData.dueDate);
+    formDataObj.append('subject', formData.subject);
+    formDataObj.append('description', formData.description);
+    formDataObj.append('teacherName', teacher.name);
+    if (assignmentFile) formDataObj.append('assignmentFile', assignmentFile);
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/teachers/assignments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          teacherName: teacher.name
-        })
+        body: formDataObj
       });
 
       if (response.ok) {
@@ -143,6 +149,24 @@ const TeacherAddAssignment = () => {
                 placeholder="Write detailed instructions for the students..." 
                 style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', outline: 'none', minHeight: '120px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }}
               ></textarea>
+            </div>
+            <div className="form-group full" style={{ gridColumn: 'span 2', marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-main)' }}>Attachment (Assignment File / Questions PDF)</label>
+              <div 
+                className="upload-area" 
+                onClick={() => document.getElementById('assignment-file').click()}
+                style={{ border: '2px dashed var(--border)', borderRadius: '12px', padding: '30px', textAlign: 'center', background: '#f9fafb', cursor: 'pointer', transition: '0.2s' }}
+              >
+                <input 
+                  type="file" 
+                  id="assignment-file"
+                  onChange={(e) => setAssignmentFile(e.target.files[0])}
+                  style={{ display: 'none' }} 
+                />
+                <i className="fas fa-file-upload" style={{ fontSize: '32px', color: 'var(--text-muted)', marginBottom: '12px' }}></i>
+                <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '4px' }}>{assignmentFile ? assignmentFile.name : 'Click to upload assignment file'}</h4>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>PDF, DOCX, or Image (Max 50MB)</p>
+              </div>
             </div>
           </div>
           <div className="form-footer" style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>

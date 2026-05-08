@@ -53,6 +53,7 @@ import TeacherAssignments from './pages/TeacherAssignments';
 import TeacherResults from './pages/TeacherResults';
 import TeacherEvents from './pages/TeacherEvents';
 import TeacherAddAssignment from './pages/TeacherAddAssignment';
+import TeacherViewSubmissions from './pages/TeacherViewSubmissions';
 
 import StudentDashboard from './pages/StudentDashboard';
 import StudentProfile from './pages/StudentProfile';
@@ -212,6 +213,7 @@ function App() {
                 <Route path="results" element={<TeacherResults />} />
                 <Route path="events" element={<TeacherEvents />} />
                 <Route path="add-assignment" element={<TeacherAddAssignment />} />
+                <Route path="view-submissions" element={<TeacherViewSubmissions />} />
               </Routes>
             </ProtectedRoute>
           }

@@ -5,7 +5,8 @@ import toast from 'react-hot-toast';
 
 const TeacherResults = () => {
   const [teacher, setTeacher] = useState(null);
-  const [selectedProgram, setSelectedProgram] = useState('');
+  const [classes, setClasses] = useState([]);
+  const [selectedClass, setSelectedClass] = useState(null);
   const [examTitle, setExamTitle] = useState('Mid-Term Exam (Oct 2026)');
   const [students, setStudents] = useState([]);
   const [resultsData, setResultsData] = useState({});
@@ -20,8 +21,27 @@ const TeacherResults = () => {
         const data = await response.json();
         if (response.ok) {
           setTeacher(data.teacher);
-          if (data.teacher.assignedClasses.length > 0) {
-            setSelectedProgram(data.teacher.assignedClasses[0]);
+          
+          // Derive unique classes from schedule (Subject + Program)
+          const uniqueClasses = [];
+          const seen = new Set();
+          
+          (data.fullSchedule || []).forEach(item => {
+            const key = `${item.subject}|${item.program}|${item.year}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              uniqueClasses.push({
+                subject: item.subject,
+                program: item.program,
+                year: item.year,
+                label: `${item.subject} (${item.program})`
+              });
+            }
+          });
+          
+          setClasses(uniqueClasses);
+          if (uniqueClasses.length > 0) {
+            setSelectedClass(uniqueClasses[0]);
           }
         }
       } catch (err) {
@@ -35,9 +55,10 @@ const TeacherResults = () => {
 
   useEffect(() => {
     const fetchRoster = async () => {
-      if (!selectedProgram) return;
+      if (!selectedClass) return;
       try {
-        const response = await fetch(`${API_BASE_URL}/api/teachers/students/${selectedProgram}`);
+        const { program, subject, year } = selectedClass;
+        const response = await fetch(`${API_BASE_URL}/api/teachers/students/${encodeURIComponent(program)}?subject=${encodeURIComponent(subject)}&year=${encodeURIComponent(year)}`);
         const data = await response.json();
         setStudents(data);
         
@@ -52,7 +73,7 @@ const TeacherResults = () => {
       }
     };
     fetchRoster();
-  }, [selectedProgram]);
+  }, [selectedClass]);
 
   const calculateGrade = (marks) => {
     if (marks >= 90) return 'A+';
@@ -76,7 +97,8 @@ const TeacherResults = () => {
       const records = Object.entries(resultsData).map(([email, info]) => ({
         studentEmail: email,
         title: examTitle,
-        subject: selectedProgram,
+        subject: selectedClass?.subject,
+        program: selectedClass?.program,
         marks: info.marks,
         totalMarks: info.totalMarks,
         grade: calculateGrade(info.marks)
@@ -116,12 +138,15 @@ const TeacherResults = () => {
       <div className="controls-bar" style={{ background: '#fff', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', gap: '16px', marginBottom: '20px' }}>
         <div className="select-wrapper" style={{ position: 'relative' }}>
           <select 
-            value={selectedProgram}
-            onChange={(e) => setSelectedProgram(e.target.value)}
+            value={selectedClass ? `${selectedClass.subject}|${selectedClass.program}|${selectedClass.year}` : ''}
+            onChange={(e) => {
+              const [subject, program, year] = e.target.value.split('|');
+              setSelectedClass({ subject, program, year });
+            }}
             style={{ appearance: 'none', background: '#f3f4f6', border: 'none', padding: '10px 36px 10px 16px', borderRadius: '8px', fontSize: '14px', outline: 'none', cursor: 'pointer', minWidth: '220px' }}
           >
-            {teacher?.assignedClasses.map((cls, i) => (
-              <option key={i} value={cls}>{cls}</option>
+            {classes.map((cls, i) => (
+              <option key={i} value={`${cls.subject}|${cls.program}|${cls.year}`}>{cls.label}</option>
             ))}
           </select>
           <i className="fas fa-chevron-down" style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none', fontSize: '12px' }}></i>

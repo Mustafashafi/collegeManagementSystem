@@ -7,7 +7,13 @@ const AssignmentSchema = new mongoose.Schema({
   dueDate: { type: Date, required: true },
   teacher: { type: String, required: true },
   status: { type: String, enum: ['Pending', 'Submitted', 'Graded'], default: 'Pending' },
-  grade: { type: String }
+  description: { type: String },
+  assignmentFile: { type: String },
+  submissionFile: { type: String },
+  submissionNotes: { type: String },
+  feedback: { type: String },
+  grade: { type: String },
+  showGrade: { type: Boolean, default: false }
 });
 
 module.exports = mongoose.model('Assignment', AssignmentSchema);

@@ -63,6 +63,40 @@ const StudentAssignments = () => {
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><i className="fas fa-user-tie"></i> {as.teacher}</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><i className="fas fa-book"></i> {as.subject}</span>
             </div>
+            
+            {as.description && (
+              <div className="as-desc" style={{ marginTop: '10px', fontSize: '13px', color: '#374151', padding: '10px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                <strong>Instructions:</strong> {as.description}
+              </div>
+            )}
+
+            {as.assignmentFile && (
+              <div style={{ marginTop: '10px' }}>
+                <a 
+                  href={`${API_BASE_URL}${as.assignmentFile}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ fontSize: '12px', color: '#2563eb', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <i className="fas fa-paperclip"></i> Download Assignment File
+                </a>
+              </div>
+            )}
+            
+            {as.status === 'Graded' && as.showGrade && (
+              <div className="grade-feedback" style={{ marginTop: '12px', padding: '10px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #dcfce7' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#166534' }}>Grade: {as.grade}</span>
+                </div>
+                {as.feedback && <p style={{ fontSize: '11px', color: '#15803d', margin: 0 }}>Feedback: {as.feedback}</p>}
+              </div>
+            )}
+            
+            {as.status === 'Graded' && !as.showGrade && (
+              <div className="grade-pending" style={{ marginTop: '12px', fontSize: '11px', color: '#6b7280', fontStyle: 'italic' }}>
+                Assignment graded. Results will be published soon.
+              </div>
+            )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <span className={`status-tag`} style={{ 

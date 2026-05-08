@@ -106,7 +106,10 @@ const TeacherDashboard = () => {
                 </div>
                 <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '12px' }}>{asgn.subject} - Due: {new Date(asgn.dueDate).toLocaleDateString()}</p>
                 {asgn.status === 'Submitted' && (
-                  <button onClick={() => navigate('/teacher/results')} style={{ width: '100%', padding: '10px', background: '#1a1a1a', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                  <button 
+                    onClick={() => navigate('/teacher/view-submissions', { state: { title: asgn.title, subject: asgn.subject, teacherName: teacher.name } })} 
+                    style={{ width: '100%', padding: '10px', background: '#1a1a1a', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                  >
                     Grade Now
                   </button>
                 )}

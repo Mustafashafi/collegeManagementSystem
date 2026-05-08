@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import TeacherLayout from '../components/TeacherLayout';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config/api';
+import toast from 'react-hot-toast';
 
 const TeacherAssignments = () => {
   const navigate = useNavigate();
@@ -35,6 +36,25 @@ const TeacherAssignments = () => {
     };
     if (user.email) fetchAssignments();
   }, [user.email]);
+
+  const handleDelete = async (title, subject) => {
+    if (!window.confirm(`Are you sure you want to delete "${title}"?`)) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/teachers/assignments/${encodeURIComponent(title)}/${encodeURIComponent(subject)}/${encodeURIComponent(user.email)}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        toast.success('Assignment deleted successfully');
+        setAssignments(assignments.filter(a => !(a.title === title && a.subject === subject)));
+      } else {
+        toast.error('Failed to delete assignment');
+      }
+    } catch (err) {
+      console.error('Error deleting assignment:', err);
+      toast.error('Connection error');
+    }
+  };
 
   return (
     <TeacherLayout>
@@ -79,9 +99,21 @@ const TeacherAssignments = () => {
                     </span>
                   </td>
                   <td>
-                    <button className="btn-sm" onClick={() => navigate('/teacher/results')}>
-                      {asgn.submitted > 0 ? 'View & Grade' : 'View Details'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button 
+                        className="btn-sm" 
+                        onClick={() => navigate('/teacher/view-submissions', { state: { title: asgn.title, subject: asgn.subject, teacherName: asgn.teacher } })}
+                      >
+                        {asgn.submitted > 0 ? 'View & Grade' : 'View Details'}
+                      </button>
+                      <button 
+                        className="btn-sm" 
+                        onClick={() => handleDelete(asgn.title, asgn.subject)}
+                        style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca' }}
+                      >
+                        <i className="fas fa-trash"></i>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )) : (

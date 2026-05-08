@@ -47,6 +47,12 @@ app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/results', require('./routes/results'));
 
+// 404 Logger
+app.use((req, res, next) => {
+    console.log(`❌ 404 NOT FOUND: ${req.method} ${req.originalUrl}`);
+    res.status(404).send(`Route ${req.originalUrl} not found`);
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);

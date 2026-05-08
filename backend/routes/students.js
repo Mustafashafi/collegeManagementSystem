@@ -1,7 +1,50 @@
 const express = require('express');
 const router = express.Router();
+const upload = require('../middleware/upload');
+const Assignment = require('../models/Assignment');
 const Student = require('../models/Student');
 const Fee = require('../models/Fee');
+
+// @route   POST /api/students/assignments/submit/:id
+// @desc    Submit an assignment with file
+router.post('/assignments/submit/:id', (req, res, next) => {
+  console.log(`--- INCOMING SUBMISSION REQUEST ---`);
+  console.log(`Method: ${req.method} | URL: ${req.originalUrl}`);
+  next();
+}, (req, res) => {
+  upload.single('file')(req, res, async (err) => {
+    if (err) {
+      console.error('Multer Error:', err);
+      return res.status(400).json({ success: false, msg: `File upload error: ${err.message}` });
+    }
+
+    console.log(`--- PROCESSING SUBMISSION ---`);
+    console.log(`ID: ${req.params.id}`);
+    
+    try {
+      const { notes } = req.body;
+      const assignment = await Assignment.findById(req.params.id);
+      if (!assignment) {
+        console.log(`❌ Assignment not found: ${req.params.id}`);
+        return res.status(404).json({ success: false, msg: 'Assignment not found' });
+      }
+
+      assignment.status = 'Submitted';
+      assignment.submissionNotes = notes;
+      if (req.file) {
+        console.log(`File received: ${req.file.filename}`);
+        assignment.submissionFile = `/uploads/assignments/${req.file.filename}`;
+      }
+      
+      await assignment.save();
+      console.log(`✅ Assignment ${req.params.id} submitted successfully!`);
+      res.json({ success: true, msg: 'Assignment submitted successfully', assignment });
+    } catch (err) {
+      console.error(`❌ Submission Error:`, err);
+      res.status(500).json({ success: false, msg: err.message });
+    }
+  });
+});
 
 // @route   GET /api/students/profile/:email
 // @desc    Get student profile by email
@@ -28,7 +71,6 @@ router.get('/fees/:email', async (req, res) => {
   }
 });
 
-const Assignment = require('../models/Assignment');
 
 // @route   GET /api/students/assignments/:email
 // @desc    Get student assignments by email
@@ -78,6 +120,13 @@ router.get('/timetable/:program', async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, msg: err.message });
   }
+});
+
+
+// Student router 404 handler
+router.use((req, res) => {
+  console.log(`❌ STUDENTS ROUTER 404: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ success: false, msg: `Student route ${req.originalUrl} not found` });
 });
 
 module.exports = router;

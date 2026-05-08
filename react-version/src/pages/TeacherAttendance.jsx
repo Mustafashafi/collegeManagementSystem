@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import TeacherLayout from '../components/TeacherLayout';
+import { useLocation } from 'react-router-dom';
 import { API_BASE_URL } from '../config/api';
 import toast from 'react-hot-toast';
 
 const TeacherAttendance = () => {
+  const location = useLocation();
   const [teacher, setTeacher] = useState(null);
   const [fullSchedule, setFullSchedule] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState('');
@@ -23,7 +25,8 @@ const TeacherAttendance = () => {
           setTeacher(data.teacher);
           setFullSchedule(data.fullSchedule || []);
           if (data.fullSchedule && data.fullSchedule.length > 0) {
-            setSelectedClassId(data.fullSchedule[0]._id);
+            const initialClassId = location.state?.classId || data.fullSchedule[0]._id;
+            setSelectedClassId(initialClassId);
           }
         }
       } catch (err) {
