@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Lead = require('../models/Lead');
+const Task = require('../models/Task');
 
 // @route   POST api/leads
 // @desc    Create a new lead (from admission form)
@@ -24,6 +25,17 @@ router.post('/', async (req, res) => {
     });
 
     const lead = await newLead.save();
+
+    // Automatically create a follow-up task for the new lead
+    const autoTask = new Task({
+      title: `Initial follow-up with ${firstName} ${lastName}`,
+      lead: lead._id,
+      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Due in 24 hours
+      priority: 'Medium',
+      notes: `New lead from ${source || 'Admission Form'}. Please contact them regarding ${program}.`
+    });
+    await autoTask.save();
+
     res.json({ success: true, lead });
   } catch (err) {
     console.error(err.message);

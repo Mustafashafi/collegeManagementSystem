@@ -14,6 +14,8 @@ const StudentSchema = new mongoose.Schema({
   status: { type: String, default: 'Active' }, // Active, Graduated, Dropped
   rollNo: { type: String },
   batch: { type: String },
+  year: { type: String, default: '1st Year' },
+  secondarySubjects: [{ type: String }],
   applicationRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Application' }
 });
 

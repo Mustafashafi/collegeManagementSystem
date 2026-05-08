@@ -98,8 +98,10 @@ const StudentDashboard = () => {
           <div className="stat-val" style={{ fontSize: '24px', fontWeight: 700 }}>{gpa}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label" style={{ fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600, marginBottom: '8px' }}>Program</div>
-          <div className="stat-val" style={{ fontSize: '18px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{profile?.program || 'Enrolled'}</div>
+          <div className="stat-label" style={{ fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600, marginBottom: '8px' }}>Year & Program</div>
+          <div className="stat-val" style={{ fontSize: '16px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {profile?.year || '1st Year'} • {profile?.program || 'Enrolled'}
+          </div>
         </div>
       </div>
 

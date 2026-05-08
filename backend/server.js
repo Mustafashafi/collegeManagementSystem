@@ -25,6 +25,8 @@ if (!process.env.MONGODB_URI) {
 // Connect to Database
 connectDB();
 
+console.log("🚀 SERVER VERSION: 4.0 ACTIVE");
+
 // Serve Uploaded Files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -32,12 +34,18 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/leads', require('./routes/leads'));
 app.use('/api/email', require('./routes/email'));
+app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/applications', require('./routes/applications'));
 app.use('/api/students', require('./routes/students'));
 
 app.get('/', (req, res) => {
     res.send("College ERP Backend is running...");
 });
+
+app.use('/api/teachers', require('./routes/teachers'));
+app.use('/api/attendance', require('./routes/attendance'));
+app.use('/api/events', require('./routes/events'));
+app.use('/api/results', require('./routes/results'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

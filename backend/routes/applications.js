@@ -129,6 +129,7 @@ router.post('/:id/enroll', async (req, res) => {
       gender: app.gender,
       address: app.address,
       program: app.program,
+      year: '1st Year',
       applicationRef: app._id
     });
     await newStudent.save();
@@ -144,31 +145,18 @@ router.post('/:id/enroll', async (req, res) => {
     await newUser.save();
 
 
-    // 5. Create Initial Fee Record (Admission Fee)
-    const newFee = new Fee({
-      studentEmail: app.email,
-      invoiceId: `INV-${year}-${Math.floor(Math.random() * 9000 + 1000)}`,
-      description: 'Admission & Term 1 Tuition Fee',
-      amount: 1200,
-      dueDate: new Date(new Date().setMonth(new Date().getMonth() + 1)) // Due in 1 month
-    });
-    await newFee.save();
-
-    // 6. Create Initial Assignment
-    const newAssignment = new Assignment({
-      studentEmail: app.email,
-      title: 'Introduction to Computing - Quiz 1',
-      subject: 'CS 101',
-      dueDate: new Date(new Date().setDate(new Date().getDate() + 7)), // Due in 7 days
-      teacher: 'Prof. Smith',
-      status: 'Pending'
-    });
-    await newAssignment.save();
-
     // 7. Update application status
     app.status = 'Enrolled';
     app.statusClass = 'status-approved';
     await app.save();
+
+    // 8. Automatically mark all CRM tasks for this person as 'Completed'
+    const Lead = require('../models/Lead');
+    const Task = require('../models/Task');
+    const lead = await Lead.findOne({ email: app.email });
+    if (lead) {
+      await Task.updateMany({ lead: lead._id }, { status: 'Completed' });
+    }
 
     res.json({ 
       success: true, 
