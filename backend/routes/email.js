@@ -25,6 +25,7 @@ transporter.verify((error, success) => {
 // @desc    Send email to one or more leads
 router.post('/send', async (req, res) => {
   const { recipients, subject, message } = req.body;
+  console.log(`📧 Email Request Received: Subject="${subject}", Recipients=${recipients?.length}`);
 
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     return res.status(500).json({
