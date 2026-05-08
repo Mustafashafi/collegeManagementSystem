@@ -9,13 +9,17 @@ if (dns.setDefaultResultOrder) {
 }
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // true for 465
   auth: {
     user: (process.env.EMAIL_USER || '').replace(/\s/g, ''),
     pass: (process.env.EMAIL_PASS || '').replace(/\s/g, ''),
   },
-  pool: true,
-  maxConnections: 3,
+  tls: {
+    rejectUnauthorized: false
+  },
+  connectionTimeout: 15000,
   family: 4
 });
 
