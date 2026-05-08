@@ -75,16 +75,24 @@ router.post('/send', async (req, res) => {
 
   // Process all emails in the background
   (async () => {
-    try {
-      // Use a simple loop to avoid overwhelming the SMTP pool for larger batches
-      for (const recipient of recipients) {
+    console.log(`📨 Starting background email process for ${recipients.length} recipients...`);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const recipient of recipients) {
+      try {
+        console.log(`📤 Attempting to send email to: ${recipient.email}`);
         await sendEmail(recipient);
+        successCount++;
+        console.log(`✅ Email sent to ${recipient.email}`);
+      } catch (err) {
+        failCount++;
+        console.error(`❌ Failed to send to ${recipient.email}:`, err);
       }
-      console.log(`✅ Successfully sent ${recipients.length} emails in background.`);
-    } catch (err) {
-      console.error('Background email error:', err.message);
     }
+    console.log(`🏁 Background process finished. Success: ${successCount}, Failed: ${failCount}`);
   })();
+
 });
 
 module.exports = router;
