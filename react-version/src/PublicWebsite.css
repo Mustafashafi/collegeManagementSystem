@@ -782,12 +782,148 @@ html {
     color: var(--accent);
 }
 
-.public-website-body .event-content p {
-    color: var(--text-muted);
-    line-height: 1.6;
+/* --- Event Detail Page --- */
+.public-website-body .event-detail-hero {
+    position: relative;
+    padding: 12rem 0 6rem;
+    color: white;
+    text-align: center;
+    overflow: hidden;
 }
 
-/* --- Contact Page --- */
+.public-website-body .event-detail-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.8));
+    z-index: 1;
+}
+
+.public-website-body .event-detail-hero .container {
+    position: relative;
+    z-index: 2;
+}
+
+.public-website-body .event-detail-hero h1 {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.public-website-body .event-detail-container {
+    margin-top: -6rem;
+    position: relative;
+    z-index: 10;
+    padding-bottom: 100px;
+}
+
+.public-website-body .event-detail-card {
+    background: white;
+    padding: 4rem;
+    border-radius: 40px;
+    box-shadow: var(--shadow-xl);
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 4rem;
+    border: 1px solid var(--border);
+}
+
+.public-website-body .event-detail-content h2 {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+}
+
+.public-website-body .event-detail-content p {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+}
+
+.public-website-body .event-feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 3rem;
+}
+
+.public-website-body .event-feature-item {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+}
+
+.public-website-body .event-feature-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.public-website-body .event-feature-text h4 {
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.public-website-body .event-feature-text p {
+    font-size: 0.95rem;
+    margin-bottom: 0;
+}
+
+.public-website-body .event-detail-sidebar-box {
+    background: var(--bg-subtle);
+    padding: 3rem;
+    border-radius: 32px;
+    border: 1px solid var(--border);
+    position: sticky;
+    top: 120px;
+}
+
+.public-website-body .event-price-tag {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 20px;
+    border: 1px dashed var(--primary);
+    text-align: center;
+}
+
+.public-website-body .event-price-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.public-website-body .event-price-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+@media (max-width: 1024px) {
+    .public-website-body .event-detail-card {
+        grid-template-columns: 1fr;
+        padding: 2.5rem;
+    }
+    .public-website-body .event-detail-hero h1 {
+        font-size: 3rem;
+    }
+    .public-website-body .event-feature-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .public-website-body .contact-grid {
     display: grid;
     grid-template-columns: 1fr 1.5fr;
@@ -912,4 +1048,223 @@ html {
     .public-website-body .map-container {
         height: 350px;
     }
+}
+
+
+/* --- History Timeline --- */
+.public-website-body .history-section {
+    background: var(--bg-subtle);
+    padding: 100px 0;
+}
+
+.public-website-body .timeline {
+    position: relative;
+    max-width: 1000px;
+    margin: 4rem auto 0;
+}
+
+.public-website-body .timeline::after {
+    content: '';
+    position: absolute;
+    width: 2px;
+    background: var(--border);
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    margin-left: -1px;
+}
+
+.public-website-body .timeline-item {
+    padding: 10px 40px;
+    position: relative;
+    width: 50%;
+}
+
+.public-website-body .timeline-item::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    right: -10px;
+    background: white;
+    border: 4px solid var(--primary);
+    top: 15px;
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.public-website-body .left { left: 0; }
+.public-website-body .right { left: 50%; }
+
+.public-website-body .right::after { left: -10px; }
+
+.public-website-body .timeline-content {
+    padding: 2rem;
+    background: white;
+    border-radius: 20px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+}
+
+.public-website-body .timeline-content h3 {
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+}
+
+.public-website-body .timeline-content h4 {
+    margin-bottom: 1rem;
+    color: var(--text-main);
+}
+
+.public-website-body .values-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3rem;
+    margin-top: 4rem;
+}
+
+.public-website-body .value-card {
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 24px;
+    transition: all 0.3s;
+    border: 1px solid var(--border);
+}
+
+.public-website-body .value-card:hover {
+    transform: translateY(-10px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary);
+}
+
+.public-website-body .value-icon {
+    width: 70px;
+    height: 70px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    margin: 0 auto 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .public-website-body .timeline::after { left: 31px; }
+    .public-website-body .timeline-item { width: 100%; padding-left: 70px; padding-right: 25px; }
+    .public-website-body .timeline-item::after { left: 21px; }
+    .public-website-body .right { left: 0; }
+    .public-website-body .values-grid { grid-template-columns: 1fr; }
+}
+
+/* --- Leadership & Staff --- */
+.public-website-body .leadership-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4rem;
+    margin-top: 4rem;
+}
+
+.public-website-body .leader-card {
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+    gap: 2.5rem;
+    background: white;
+    padding: 3rem;
+    border-radius: 32px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s;
+    align-items: center;
+}
+
+.public-website-body .leader-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary);
+}
+
+.public-website-body .leader-img {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 24px;
+    overflow: hidden;
+}
+
+.public-website-body .leader-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.public-website-body .leader-info h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-main);
+}
+
+.public-website-body .leader-info span {
+    display: block;
+    color: var(--primary);
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}
+
+.public-website-body .staff-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+    margin-top: 4rem;
+}
+
+.public-website-body .staff-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.public-website-body .staff-card:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-md);
+}
+
+.public-website-body .staff-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto 1.5rem;
+    border: 4px solid var(--primary-light);
+}
+
+.public-website-body .staff-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.public-website-body .staff-info h4 {
+    margin-bottom: 0.25rem;
+}
+
+.public-website-body .staff-info p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+@media (max-width: 1024px) {
+    .public-website-body .leadership-grid { grid-template-columns: 1fr; }
+    .public-website-body .staff-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+    .public-website-body .leader-card { grid-template-columns: 1fr; text-align: center; }
+    .public-website-body .staff-grid { grid-template-columns: 1fr; }
 }

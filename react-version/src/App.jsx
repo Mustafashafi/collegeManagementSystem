@@ -87,6 +87,7 @@ import PublicAbout from './pages/PublicAbout';
 import PublicEvents from './pages/PublicEvents';
 import PublicAdmission from './pages/PublicAdmission';
 import PublicContact from './pages/PublicContact';
+import PublicEventDetail from './pages/PublicEventDetail';
 
 
 import { adminNavigation, crmNavigation, studentNavigation, parentNavigation, librarianNavigation } from './config/navigation';
@@ -110,6 +111,7 @@ function App() {
           <Route path="/home" element={<PublicHome />} />
           <Route path="/about" element={<PublicAbout />} />
           <Route path="/events" element={<PublicEvents />} />
+          <Route path="/events/:id" element={<PublicEventDetail />} />
           <Route path="/admission" element={<PublicAdmission />} />
           <Route path="/contact" element={<PublicContact />} />
         </Route>
