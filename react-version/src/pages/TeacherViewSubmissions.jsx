@@ -106,12 +106,22 @@ const TeacherViewSubmissions = () => {
                           <i className="fas fa-download"></i> View File
                         </a>
                       )}
-                      <button className="btn-sm" onClick={() => { 
-                        setSelectedSubmission(sub); 
-                        setGrade(sub.grade || ''); 
-                        setFeedback(sub.feedback || ''); 
-                        setShowGrade(sub.showGrade || false);
-                      }} style={{ background: '#1a1a1a', color: '#fff', border: 'none' }}>
+                      <button 
+                        className="btn-sm" 
+                        disabled={sub.status === 'Pending'}
+                        onClick={() => { 
+                          setSelectedSubmission(sub); 
+                          setGrade(sub.grade || ''); 
+                          setFeedback(sub.feedback || ''); 
+                          setShowGrade(sub.showGrade || false);
+                        }} 
+                        style={{ 
+                          background: sub.status === 'Pending' ? '#e5e7eb' : '#1a1a1a', 
+                          color: sub.status === 'Pending' ? '#9ca3af' : '#fff', 
+                          border: 'none',
+                          cursor: sub.status === 'Pending' ? 'not-allowed' : 'pointer'
+                        }}
+                      >
                         {sub.status === 'Graded' ? 'Edit Grade' : 'Grade'}
                       </button>
                     </div>
