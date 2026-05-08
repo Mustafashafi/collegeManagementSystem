@@ -99,57 +99,10 @@ router.get('/students/:program', async (req, res) => {
       const studentYear = normalize(student.year);
 
       // Match Program & Year
+      const studentSecondary = (student.secondarySubjects || []).map(s => normalize(s));
       const isTargetProgram = studentProgram === cleanTarget && studentYear === cleanYear;
       
-      if (subject) {
-        const cleanSubject = normalize(subject);
-        const isSecondary = studentSecondary.includes(cleanSubject);
-        
-        // Logical Fix: 
-        // If the subject is in their secondarySubjects, they MUST be included (cross-departmental).
-        if (isSecondary) return true;
-
-        // If they are in the target program, we include them ONLY if they don't have secondary subjects
-        // that suggest they are from a different department for this specific class.
-        // But more simply: if they are in the program, we assume it's their core subject UNLESS
-        // we have evidence otherwise.
-        
-        // For the "Cloud Computing" case:
-        // - CS students: isTargetProgram=true, isSecondary=false -> INCLUDE
-        // - Mechanical students: isTargetProgram=true, isSecondary=true -> INCLUDE
-        // - Mechanical students: isTargetProgram=true, isSecondary=false -> EXCLUDE (if they don't take it)
-        
-        // Wait, if I am looking for Cloud Computing (Mechanical), cleanTarget is "Mechanical".
-        // A Mechanical student who DOES NOT take it will have isTargetProgram=true but isSecondary=false.
-        // We SHOULD exclude them.
-        
-        // How to know if it's a secondary-only subject for this program?
-        // If ANY student in this program takes it as secondary, then it's likely secondary-only for this program.
-        
-        // But let's look at the data:
-        // Islamyat is assigned as secondary to Mechanical students.
-        // If I look for Islamyat (Mechanical), I only want those who have it as secondary.
-        
-        // So: If (subject is in secondarySubjects) -> INCLUDE.
-        // If (isTargetProgram AND subject is NOT in secondarySubjects) -> 
-        //    Include ONLY if the subject is "core" for this program.
-        //    Since we don't have a core list, let's assume it's NOT core if ANYONE in this program has it as secondary.
-        
-        // Actually, a safer bet for this specific project structure:
-        // If a subject is provided, and the student is in the target program, 
-        // check if that subject is ALSO a secondary subject for SOME students in that program.
-        // This is getting complex.
-        
-        // Let's use a simpler heuristic:
-        // If the student is in the target program, they are included UNLESS the subject name 
-        // suggests it's a secondary subject (like Cloud Computing for Mechanical).
-        
-        // Better: Just check if the student has it in secondarySubjects OR if they match the program.
-        // To fix the "Bob" issue, we need to know if the student is actually enrolled.
-        
-        return isSecondary || isTargetProgram;
-      }
-
+      // To be in the roster for (Subject X, Program Y), the student MUST be in Program Y.
       return isTargetProgram;
     });
 
