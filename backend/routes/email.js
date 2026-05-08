@@ -3,13 +3,16 @@ const router = express.Router();
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: {
     user: (process.env.EMAIL_USER || '').replace(/\s/g, ''),
     pass: (process.env.EMAIL_PASS || '').replace(/\s/g, ''),
   },
   pool: true,
-  maxConnections: 3
+  maxConnections: 3,
+  family: 4 // Force IPv4 to avoid ENETUNREACH issues with IPv6
 });
 
 // Verify connection on startup
