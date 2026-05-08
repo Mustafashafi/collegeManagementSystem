@@ -9,7 +9,7 @@ if (dns.setDefaultResultOrder) {
 }
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
+  host: '74.125.142.108', // smtp.gmail.com (IPv4)
   port: 587,
   secure: false,
   auth: {
@@ -17,15 +17,13 @@ const transporter = nodemailer.createTransport({
     pass: (process.env.EMAIL_PASS || '').replace(/\s/g, ''),
   },
   tls: {
-    rejectUnauthorized: false
+    rejectUnauthorized: false,
+    servername: 'smtp.gmail.com' // Explicitly set servername for SNI
   },
-  family: 4, 
-  lookup: (hostname, options, callback) => {
-    dns.lookup(hostname, 4, callback);
-  },
-  connectionTimeout: 30000, // 30 seconds
-  greetingTimeout: 30000,
-  socketTimeout: 30000,
+  localAddress: '0.0.0.0', // Force local IPv4 bind
+  connectionTimeout: 40000,
+  greetingTimeout: 40000,
+  socketTimeout: 40000,
 });
 
 // Verify connection on startup
