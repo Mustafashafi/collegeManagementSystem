@@ -18,8 +18,8 @@ if (!process.env.MONGODB_URI) {
     console.error("❌ ERROR: MONGODB_URI is undefined. Check your .env file path!");
 } else {
     console.log("✅ .env file loaded successfully");
-    console.log("📧 RESEND_API_KEY:", process.env.RESEND_API_KEY ? "Configured" : "MISSING");
-    console.log("📧 EMAIL_FROM:", process.env.EMAIL_FROM ? "Configured" : "MISSING");
+    console.log("📧 EMAIL_USER:", process.env.EMAIL_USER ? "Configured" : "MISSING");
+    console.log("📧 EMAIL_PASS:", process.env.EMAIL_PASS ? "Configured" : "MISSING");
 }
 
 // Connect to Database
