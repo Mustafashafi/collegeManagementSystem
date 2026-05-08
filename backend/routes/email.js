@@ -1,11 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+
+// Force IPv4 preference globally for this process
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false, // Use STARTTLS
   auth: {
     user: (process.env.EMAIL_USER || '').replace(/\s/g, ''),
     pass: (process.env.EMAIL_PASS || '').replace(/\s/g, ''),
