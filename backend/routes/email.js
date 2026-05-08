@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
+const dns = require('dns');
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
@@ -14,6 +15,9 @@ const transporter = nodemailer.createTransport({
     rejectUnauthorized: false
   },
   family: 4, // Force IPv4
+  lookup: (hostname, options, callback) => {
+    dns.lookup(hostname, { family: 4 }, callback);
+  },
   connectionTimeout: 20000,
   greetingTimeout: 20000,
   socketTimeout: 20000,
