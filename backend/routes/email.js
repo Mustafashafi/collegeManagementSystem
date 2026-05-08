@@ -1,25 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
-const dns = require('dns');
-
-// Force Node.js to prefer IPv4 over IPv6 globally
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder('ipv4first');
-}
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
-  host: 'smtp.googlemail.com',
-  port: 465,
-  secure: true,
   auth: {
-    user: (process.env.EMAIL_USER || '').trim(),
-    pass: (process.env.EMAIL_PASS || '').trim(),
+    user: (process.env.EMAIL_USER || '').replace(/\s/g, ''),
+    pass: (process.env.EMAIL_PASS || '').replace(/\s/g, ''),
   },
-  tls: {
-    rejectUnauthorized: false
-  }
+  pool: true,
+  maxConnections: 3
 });
 
 // Verify connection on startup
@@ -35,7 +25,6 @@ transporter.verify((error, success) => {
 // @desc    Send email to one or more leads
 router.post('/send', async (req, res) => {
   const { recipients, subject, message } = req.body;
-  console.log(`📧 Email Request Received: Subject="${subject}", Recipients=${recipients?.length}`);
 
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     return res.status(500).json({
@@ -85,24 +74,16 @@ router.post('/send', async (req, res) => {
 
   // Process all emails in the background
   (async () => {
-    console.log(`📨 Starting background email process for ${recipients.length} recipients...`);
-    let successCount = 0;
-    let failCount = 0;
-
-    for (const recipient of recipients) {
-      try {
-        console.log(`📤 Attempting to send email to: ${recipient.email}`);
+    try {
+      // Use a simple loop to avoid overwhelming the SMTP pool for larger batches
+      for (const recipient of recipients) {
         await sendEmail(recipient);
-        successCount++;
-        console.log(`✅ Email sent to ${recipient.email}`);
-      } catch (err) {
-        failCount++;
-        console.error(`❌ Failed to send to ${recipient.email}:`, err);
       }
+      console.log(`✅ Successfully sent ${recipients.length} emails in background.`);
+    } catch (err) {
+      console.error('Background email error:', err.message);
     }
-    console.log(`🏁 Background process finished. Success: ${successCount}, Failed: ${failCount}`);
   })();
-
 });
 
 module.exports = router;

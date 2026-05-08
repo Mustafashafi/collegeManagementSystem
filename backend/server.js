@@ -11,19 +11,7 @@ const connectDB = require('./config/db');
 const app = express();
 
 // Middleware
-app.use(cors({
-    origin: true, // Reflect the request origin to allow credentials
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-}));
-
-// Simple Request Logger
-app.use((req, res, next) => {
-    console.log(`Incoming Request: ${req.method} ${req.url}`);
-    next();
-});
-
+app.use(cors());
 app.use(express.json());
 
 if (!process.env.MONGODB_URI) {
@@ -49,12 +37,6 @@ app.use('/api/students', require('./routes/students'));
 
 app.get('/', (req, res) => {
     res.send("College ERP Backend is running...");
-});
-
-// Error Handler
-app.use((err, req, res, next) => {
-    console.error("❌ GLOBAL ERROR:", err.stack);
-    res.status(500).json({ success: false, msg: "Internal Server Error", error: err.message });
 });
 
 const PORT = process.env.PORT || 5000;
