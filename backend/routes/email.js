@@ -27,10 +27,9 @@ router.post('/send', async (req, res) => {
   const { recipients, subject, message } = req.body;
 
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.error('📧 Email Error: Credentials missing in environment variables');
     return res.status(500).json({
       success: false,
-      msg: 'Email credentials are not configured in the server environment.'
+      msg: 'Email credentials are not configured.'
     });
   }
 
@@ -46,64 +45,45 @@ router.post('/send', async (req, res) => {
   // Define the send function
   const sendEmail = async ({ email, name }) => {
     return transporter.sendMail({
-      from: `"Skyra Institute" <${fromEmail}>`,
+      from: `"EduSystem Admissions" <${fromEmail}>`,
       to: email,
       subject: subject,
       html: `
-        <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 16px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h2 style="color: #4f46e5; margin: 0;">Skyra Institute</h2>
-            <p style="color: #64748b; margin: 5px 0 0;">Admissions & Communication</p>
+        <div style="font-family: Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px;">
+          <div style="background: #1a1a1a; color: #fff; padding: 20px; border-radius: 12px 12px 0 0; text-align: center;">
+            <h2 style="margin: 0; font-size: 20px;">EduSystem College</h2>
+            <p style="margin: 6px 0 0; opacity: 0.7; font-size: 13px;">Admissions Department</p>
           </div>
-          <div style="color: #1e293b; line-height: 1.6;">
-            <p>Dear <strong>${name}</strong>,</p>
-            <div style="margin: 20px 0; background: #f8fafc; padding: 20px; border-radius: 12px; border-left: 4px solid #4f46e5;">
-              ${message.replace(/\n/g, '<br/>')}
-            </div>
-            <p>Best Regards,<br/><strong>Skyra Admissions Team</strong></p>
-          </div>
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
-            This is an automated message. Please do not reply directly to this email.
+          <div style="background: #fff; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
+            <p style="font-size: 15px; color: #374151; margin-bottom: 20px;">Dear <strong>${name}</strong>,</p>
+            <div style="font-size: 14px; color: #374151; line-height: 1.7; white-space: pre-line;">${message}</div>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+            <p style="font-size: 12px; color: #9ca3af;">This email was sent by EduSystem Admissions. Please do not reply to this email directly.</p>
           </div>
         </div>
       `,
     });
   };
 
-  try {
-    // Send emails sequentially to avoid spam filters and connection limits
-    // For production stability, we await the results
-    const results = [];
-    for (const recipient of recipients) {
-      const info = await sendEmail(recipient);
-      results.push(info);
-    }
+  // Return success immediately to the frontend
+  res.json({ 
+    success: true, 
+    msg: recipients.length > 1 ? `Process started for ${recipients.length} emails.` : 'Email is being sent.',
+    sent: recipients.length 
+  });
 
-    console.log(`✅ Successfully sent ${results.length} emails.`);
-    
-    res.json({ 
-      success: true, 
-      msg: recipients.length > 1 ? `${recipients.length} emails sent successfully.` : 'Email sent successfully.',
-      sent: recipients.length 
-    });
-  } catch (err) {
-    console.error('📧 Nodemailer Error:', err);
-    
-    // Provide a more descriptive error message for production debugging
-    let errorMsg = 'Failed to send email.';
-    if (err.message.includes('EAUTH')) {
-      errorMsg = 'Email authentication failed. Please check your App Password.';
-    } else if (err.message.includes('ECONN')) {
-      errorMsg = 'Could not connect to email server.';
+  // Process all emails in the background
+  (async () => {
+    try {
+      // Use a simple loop to avoid overwhelming the SMTP pool for larger batches
+      for (const recipient of recipients) {
+        await sendEmail(recipient);
+      }
+      console.log(`✅ Successfully sent ${recipients.length} emails in background.`);
+    } catch (err) {
+      console.error('Background email error:', err.message);
     }
-
-    res.status(500).json({ 
-      success: false, 
-      msg: errorMsg,
-      error: err.message
-    });
-  }
+  })();
 });
-
 
 module.exports = router;
