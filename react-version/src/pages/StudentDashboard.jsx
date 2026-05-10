@@ -22,7 +22,7 @@ const StudentDashboard = () => {
           fetch(`${API_BASE_URL}/api/students/assignments/${user.email}`),
           fetch(`${API_BASE_URL}/api/students/results/${user.email}`)
         ]);
-        
+
         const profileData = await profileRes.json();
         const feesData = await feesRes.json();
         const attData = await attRes.json();
@@ -64,11 +64,11 @@ const StudentDashboard = () => {
   const uniqueEnrolledSubjects = new Set(timetable.map(t => t.subject)).size;
   const uniqueGradedSubjects = new Set(results.map(r => r.subject)).size;
 
-  const gradePoints = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'D': 1.0, 'F': 0.0 };
+  const gradePoints = { 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
   const totalPoints = results.reduce((acc, r) => acc + (gradePoints[r.grade] || 0), 0);
-  
-  const gpa = (uniqueEnrolledSubjects > 0 && uniqueGradedSubjects >= uniqueEnrolledSubjects) 
-    ? (totalPoints / results.length).toFixed(2) 
+
+  const gpa = (uniqueEnrolledSubjects > 0 && uniqueGradedSubjects >= uniqueEnrolledSubjects)
+    ? (totalPoints / results.length).toFixed(2)
     : 'Pending';
 
   const pendingFees = fees.filter(f => f.status === 'Pending');
@@ -125,13 +125,13 @@ const StudentDashboard = () => {
                 <h4 style={{ fontSize: '14px', fontWeight: 600 }}>{asgn.title}</h4>
                 <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>Due: {new Date(asgn.dueDate).toLocaleDateString()} • {asgn.teacher}</p>
               </div>
-              <span className="badge" style={{ 
-                padding: '4px 8px', 
-                borderRadius: '6px', 
-                fontSize: '11px', 
-                fontWeight: 600, 
-                background: asgn.status === 'Pending' ? '#fff7ed' : '#dcfce7', 
-                color: asgn.status === 'Pending' ? '#9a3412' : '#166534' 
+              <span className="badge" style={{
+                padding: '4px 8px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                fontWeight: 600,
+                background: asgn.status === 'Pending' ? '#fff7ed' : '#dcfce7',
+                color: asgn.status === 'Pending' ? '#9a3412' : '#166534'
               }}>{asgn.status}</span>
             </div>
           ))}
@@ -171,7 +171,7 @@ const StudentDashboard = () => {
           <div style={{ flex: 1, padding: '15px', background: totalPending > 0 ? '#fffbeb' : '#f0fdf4', border: totalPending > 0 ? '1px solid #fde68a' : '1px solid #bcf0da', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <i className={`fas ${totalPending > 0 ? 'fa-exclamation-triangle' : 'fa-check-circle'}`} style={{ color: totalPending > 0 ? '#d97706' : '#166534' }}></i>
             <p style={{ fontSize: '13px', color: totalPending > 0 ? '#92400e' : '#166534' }}>
-              {totalPending > 0 
+              {totalPending > 0
                 ? `You have a pending tuition fee of $${totalPending.toLocaleString()}. Please ensure payment is made by the due date.`
                 : `All your fees are currently up to date. Thank you!`}
             </p>
