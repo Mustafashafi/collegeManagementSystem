@@ -3,36 +3,60 @@ const router = express.Router();
 const Lead = require('../models/Lead');
 const Task = require('../models/Task');
 
-// @route   POST api/leads
-// @desc    Create a new lead (from admission form)
+// ─── Follow-up config per lead status (mirrors tasks.js) ────────────────────
+const FOLLOWUP_CONFIG = {
+  'New Inquiry': {
+    priority: 'High',
+    dueDays: 1,
+    titleFn: (lead) => `📞 Contact: ${lead.firstName} ${lead.lastName} — New Inquiry, Not Yet Contacted`,
+    notesFn: (lead) => `This lead submitted an inquiry for ${lead.program} via ${lead.source || 'Admission Form'} but has NOT been contacted yet. Please call or email them at ${lead.email} / ${lead.phone} as soon as possible.`
+  },
+  'Contacted': {
+    priority: 'High',
+    dueDays: 2,
+    titleFn: (lead) => `📋 Follow up: ${lead.firstName} ${lead.lastName} — Interested in ${lead.program} Admission`,
+    notesFn: (lead) => `This lead has been contacted and is interested in ${lead.program}. Please follow up to address their admission queries, explain the process, and encourage them to submit an application. Contact: ${lead.email} / ${lead.phone}.`
+  },
+  'Interested': {
+    priority: 'Medium',
+    dueDays: 3,
+    titleFn: (lead) => `📝 Push Application: ${lead.firstName} ${lead.lastName} — Ready for ${lead.program} Admission`,
+    notesFn: (lead) => `This lead is interested in ${lead.program} and may be ready to apply. Follow up to guide them through the application process. Contact: ${lead.email} / ${lead.phone}.`
+  },
+  'Application Submitted': {
+    priority: 'Medium',
+    dueDays: 5,
+    titleFn: (lead) => `✅ Application Review: ${lead.firstName} ${lead.lastName} — ${lead.program}`,
+    notesFn: (lead) => `This lead has submitted their application for ${lead.program}. Follow up to update them on status and next steps. Contact: ${lead.email} / ${lead.phone}.`
+  }
+  // 'Lost' → no follow-up generated
+};
+
+// ─── POST api/leads ──────────────────────────────────────────────────────────
 router.post('/', async (req, res) => {
   try {
     const { firstName, lastName, email, phone, program, institution, marks, source } = req.body;
-    
+
     const counselors = ['Sarah Johnson', 'Mike Ross', 'Jessica Pearson', 'Harvey Specter', 'Louis Litt', 'Rachel Zane'];
     const randomCounselor = counselors[Math.floor(Math.random() * counselors.length)];
 
     const newLead = new Lead({
-      firstName,
-      lastName,
-      email,
-      phone,
-      program,
-      institution,
-      marks,
+      firstName, lastName, email, phone, program, institution, marks,
       source: source || 'Admission Form',
       assigned: randomCounselor
     });
 
     const lead = await newLead.save();
 
-    // Automatically create a follow-up task for the new lead
+    // Auto-create follow-up for New Inquiry
+    const config = FOLLOWUP_CONFIG['New Inquiry'];
     const autoTask = new Task({
-      title: `Initial follow-up with ${firstName} ${lastName}`,
+      title: config.titleFn(lead),
       lead: lead._id,
-      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Due in 24 hours
-      priority: 'Medium',
-      notes: `New lead from ${source || 'Admission Form'}. Please contact them regarding ${program}.`
+      dueDate: new Date(Date.now() + config.dueDays * 24 * 60 * 60 * 1000),
+      priority: config.priority,
+      type: 'auto-followup',
+      notes: config.notesFn(lead)
     });
     await autoTask.save();
 
@@ -43,8 +67,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// @route   GET api/leads
-// @desc    Get all leads
+// ─── GET api/leads ───────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
     const leads = await Lead.find().sort({ added: -1 });
@@ -55,34 +78,46 @@ router.get('/', async (req, res) => {
   }
 });
 
-// @route   PUT api/leads/:id
-// @desc    Update lead status
+// ─── PUT api/leads/:id ───────────────────────────────────────────────────────
 router.put('/:id', async (req, res) => {
   try {
     const { status } = req.body;
-    
-    // Map status to statusClass
+
     const statusClasses = {
       'New Inquiry': 'status-new',
       'Contacted': 'status-contacted',
       'Interested': 'status-interested',
-      'Application Submitted': 'status-interested', // or another class
-      'Lost': 'status-new' // or another class
+      'Application Submitted': 'status-interested',
+      'Lost': 'status-new'
     };
 
     const lead = await Lead.findByIdAndUpdate(
       req.params.id,
-      { 
-        $set: { 
-          status, 
-          statusClass: statusClasses[status] || 'status-new' 
-        } 
-      },
+      { $set: { status, statusClass: statusClasses[status] || 'status-new' } },
       { new: true }
     );
 
-    if (!lead) {
-      return res.status(404).json({ msg: 'Lead not found' });
+    if (!lead) return res.status(404).json({ msg: 'Lead not found' });
+
+    // ── Auto follow-up on status change ───────────────────────────────────
+    // 1. Mark all existing pending auto-followups for this lead as Completed
+    await Task.updateMany(
+      { lead: lead._id, type: 'auto-followup', status: 'Pending' },
+      { $set: { status: 'Completed' } }
+    );
+
+    // 2. Create a new follow-up task for the new status (if applicable)
+    const config = FOLLOWUP_CONFIG[status];
+    if (config) {
+      const newTask = new Task({
+        title: config.titleFn(lead),
+        lead: lead._id,
+        dueDate: new Date(Date.now() + config.dueDays * 24 * 60 * 60 * 1000),
+        priority: config.priority,
+        type: 'auto-followup',
+        notes: config.notesFn(lead)
+      });
+      await newTask.save();
     }
 
     res.json(lead);
@@ -92,15 +127,15 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// @route   DELETE api/leads/:id
-// @desc    Delete a lead
+// ─── DELETE api/leads/:id ────────────────────────────────────────────────────
 router.delete('/:id', async (req, res) => {
   try {
     const lead = await Lead.findByIdAndDelete(req.params.id);
 
-    if (!lead) {
-      return res.status(404).json({ success: false, msg: 'Lead not found' });
-    }
+    if (!lead) return res.status(404).json({ success: false, msg: 'Lead not found' });
+
+    // Also clean up any tasks linked to this lead
+    await Task.deleteMany({ lead: lead._id });
 
     res.json({ success: true, msg: 'Lead deleted' });
   } catch (err) {

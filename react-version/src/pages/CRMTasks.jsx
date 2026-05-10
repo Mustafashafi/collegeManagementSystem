@@ -7,7 +7,7 @@ const CRMTasks = () => {
   const [tasks, setTasks] = useState([]);
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Form State
   const [title, setTitle] = useState('');
   const [selectedLead, setSelectedLead] = useState('');
@@ -17,9 +17,19 @@ const CRMTasks = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchTasks();
+    syncAndFetch();
     fetchLeads();
   }, []);
+
+  const syncAndFetch = async () => {
+    try {
+      // Auto-generate follow-up tasks for any New Inquiry leads with no pending task
+      await fetch(`${API_BASE_URL}/api/tasks/sync-followups`, { method: 'POST' });
+    } catch (err) {
+      console.error('Sync error:', err);
+    }
+    await fetchTasks();
+  };
 
   const fetchTasks = async () => {
     try {
@@ -56,13 +66,7 @@ const CRMTasks = () => {
       const response = await fetch(`${API_BASE_URL}/api/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          lead: selectedLead || null,
-          dueDate,
-          priority,
-          notes
-        })
+        body: JSON.stringify({ title, lead: selectedLead || null, dueDate, priority, notes, type: 'manual' })
       });
 
       if (response.ok) {
@@ -92,11 +96,19 @@ const CRMTasks = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
-      if (response.ok) {
-        fetchTasks();
-      }
+      if (response.ok) fetchTasks();
     } catch (err) {
       console.error('Error updating task:', err);
+    }
+  };
+
+  const deleteTask = async (id) => {
+    try {
+      await fetch(`${API_BASE_URL}/api/tasks/${id}`, { method: 'DELETE' });
+      fetchTasks();
+      toast.success('Task removed');
+    } catch (err) {
+      console.error('Error deleting task:', err);
     }
   };
 
@@ -123,6 +135,7 @@ const CRMTasks = () => {
       </div>
 
       <div className="grid-layout">
+        {/* Task List */}
         <div>
           <div className="filters-bar">
             <button className={`filter-btn ${filter === 'Pending' ? 'active' : ''}`} onClick={() => setFilter('Pending')}>Pending</button>
@@ -136,15 +149,28 @@ const CRMTasks = () => {
             ) : filteredTasks.length === 0 ? (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>No tasks found for this filter.</div>
             ) : filteredTasks.map((task) => (
-              <div className="task-card" key={task._id}>
-                <input 
-                  type="checkbox" 
-                  className="task-checkbox" 
+              <div
+                className="task-card"
+                key={task._id}
+                style={{ borderLeft: task.type === 'auto-followup' ? '4px solid #f59e0b' : '4px solid var(--border)' }}
+              >
+                <input
+                  type="checkbox"
+                  className="task-checkbox"
                   checked={task.status === 'Completed'}
                   onChange={() => toggleTaskStatus(task._id, task.status)}
                 />
-                <div className="task-content">
-                  <h4 className="task-title" style={task.status === 'Completed' ? { textDecoration: 'line-through', opacity: 0.6 } : {}}>{task.title}</h4>
+                <div className="task-content" style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                    <h4 className="task-title" style={task.status === 'Completed' ? { textDecoration: 'line-through', opacity: 0.6 } : {}}>
+                      {task.title}
+                    </h4>
+                    {task.type === 'auto-followup' && (
+                      <span style={{ fontSize: '10px', fontWeight: 700, background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '99px', whiteSpace: 'nowrap' }}>
+                        🔔 Auto Follow-up
+                      </span>
+                    )}
+                  </div>
                   <div className="task-meta">
                     <span><i className="fas fa-user"></i> Lead: {task.lead ? `${task.lead.firstName} ${task.lead.lastName}` : 'General'}</span>
                     <span style={new Date(task.dueDate) < new Date() && task.status !== 'Completed' ? { color: '#b91c1c' } : {}}>
@@ -152,22 +178,32 @@ const CRMTasks = () => {
                     </span>
                     <span className={`priority-tag ${getPriorityClass(task.priority)}`}>{task.priority}</span>
                   </div>
-                  {task.notes && <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>{task.notes}</p>}
+                  {task.notes && (
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px', lineHeight: 1.5 }}>{task.notes}</p>
+                  )}
                 </div>
+                <button
+                  onClick={() => deleteTask(task._id)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#d1d5db', padding: '4px 8px', borderRadius: '6px', alignSelf: 'flex-start' }}
+                  title="Remove task"
+                >
+                  <i className="fas fa-trash-alt" style={{ fontSize: '13px' }}></i>
+                </button>
               </div>
             ))}
           </div>
         </div>
 
+        {/* Create Task Form */}
         <div className="form-panel">
           <h3>Create New Task</h3>
           <form onSubmit={handleAddTask}>
             <div className="form-group">
               <label>Task Title</label>
-              <input 
-                type="text" 
-                className="form-control" 
-                placeholder="e.g. Call to schedule campus tour" 
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. Call to schedule campus tour"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
@@ -175,7 +211,7 @@ const CRMTasks = () => {
             </div>
             <div className="form-group">
               <label>Linked Lead</label>
-              <select 
+              <select
                 className="form-control"
                 value={selectedLead}
                 onChange={(e) => setSelectedLead(e.target.value)}
@@ -188,9 +224,9 @@ const CRMTasks = () => {
             </div>
             <div className="form-group">
               <label>Due Date & Time</label>
-              <input 
-                type="datetime-local" 
-                className="form-control" 
+              <input
+                type="datetime-local"
+                className="form-control"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
                 required
@@ -198,7 +234,7 @@ const CRMTasks = () => {
             </div>
             <div className="form-group">
               <label>Priority</label>
-              <select 
+              <select
                 className="form-control"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
@@ -210,9 +246,9 @@ const CRMTasks = () => {
             </div>
             <div className="form-group">
               <label>Notes</label>
-              <textarea 
-                className="form-control" 
-                style={{ minHeight: '80px' }} 
+              <textarea
+                className="form-control"
+                style={{ minHeight: '80px' }}
                 placeholder="Optional notes..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}

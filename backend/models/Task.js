@@ -7,6 +7,7 @@ const TaskSchema = new mongoose.Schema({
   priority: { type: String, default: 'Medium' },
   status: { type: String, default: 'Pending' },
   notes: { type: String },
+  type: { type: String, default: 'manual', enum: ['manual', 'auto-followup'] },
   createdAt: { type: Date, default: Date.now }
 });
 
