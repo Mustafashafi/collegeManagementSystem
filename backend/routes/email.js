@@ -76,25 +76,28 @@ router.post('/send', async (req, res) => {
     });
   };
 
-  // Return success immediately to the frontend
-  res.json({
-    success: true,
-    msg: recipients.length > 1 ? `Process started for ${recipients.length} emails.` : 'Email is being sent.',
-    sent: recipients.length
-  });
-
-  // Process all emails in the background
-  (async () => {
-    try {
-      // Use a simple loop to avoid overwhelming the SMTP pool for larger batches
-      for (const recipient of recipients) {
-        await sendEmail(recipient);
-      }
-      console.log(`✅ Successfully sent ${recipients.length} emails in background.`);
-    } catch (err) {
-      console.error('Background email error:', err.message);
+  try {
+    // Wait for all emails to be sent sequentially
+    for (const recipient of recipients) {
+      await sendEmail(recipient);
     }
-  })();
+    
+    console.log(`✅ Successfully sent ${recipients.length} emails.`);
+    
+    // Return success only after emails have been sent
+    res.json({
+      success: true,
+      msg: recipients.length > 1 ? `Successfully sent ${recipients.length} emails.` : 'Email sent successfully.',
+      sent: recipients.length
+    });
+  } catch (err) {
+    console.error('Email sending error:', err.message);
+    res.status(500).json({
+      success: false,
+      msg: 'Failed to send email. Please check server logs.',
+      error: err.message
+    });
+  }
 });
 
 module.exports = router;
