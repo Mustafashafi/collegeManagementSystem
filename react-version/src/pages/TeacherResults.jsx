@@ -12,6 +12,7 @@ const TeacherResults = () => {
   const [resultsData, setResultsData] = useState({});
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasPublishedGrades, setHasPublishedGrades] = useState(false);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
@@ -21,11 +22,11 @@ const TeacherResults = () => {
         const data = await response.json();
         if (response.ok) {
           setTeacher(data.teacher);
-          
+
           // Derive unique classes from schedule (Subject + Program)
           const uniqueClasses = [];
           const seen = new Set();
-          
+
           (data.fullSchedule || []).forEach(item => {
             const key = `${item.subject}|${item.program}|${item.year}`;
             if (!seen.has(key)) {
@@ -38,7 +39,7 @@ const TeacherResults = () => {
               });
             }
           });
-          
+
           setClasses(uniqueClasses);
           if (uniqueClasses.length > 0) {
             setSelectedClass(uniqueClasses[0]);
@@ -54,26 +55,44 @@ const TeacherResults = () => {
   }, [user.email]);
 
   useEffect(() => {
-    const fetchRoster = async () => {
+    const fetchRosterAndResults = async () => {
       if (!selectedClass) return;
       try {
         const { program, subject, year } = selectedClass;
+
+        // Fetch students
         const response = await fetch(`${API_BASE_URL}/api/teachers/students/${encodeURIComponent(program)}?subject=${encodeURIComponent(subject)}&year=${encodeURIComponent(year)}`);
         const data = await response.json();
         setStudents(data);
-        
-        // Initialize results data
+
+        // Fetch existing results
+        const resResponse = await fetch(`${API_BASE_URL}/api/results/class?subject=${encodeURIComponent(subject)}&examType=${encodeURIComponent(examTitle)}`);
+        const existingResults = resResponse.ok ? await resResponse.json() : [];
+
+        const resultMap = {};
+        existingResults.forEach(r => {
+          resultMap[r.studentEmail] = r;
+        });
+
+        // Initialize results data with existing grades if they exist
         const initial = {};
+        let existingFound = false;
         data.forEach(s => {
-          initial[s.email] = { marks: 0, totalMarks: 100 };
+          if (resultMap[s.email]) {
+            initial[s.email] = { marks: resultMap[s.email].marksObtained, totalMarks: resultMap[s.email].totalMarks };
+            existingFound = true;
+          } else {
+            initial[s.email] = { marks: 0, totalMarks: 100 };
+          }
         });
         setResultsData(initial);
+        setHasPublishedGrades(existingFound);
       } catch (err) {
-        console.error('Error fetching roster:', err);
+        console.error('Error fetching roster or results:', err);
       }
     };
-    fetchRoster();
-  }, [selectedClass]);
+    fetchRosterAndResults();
+  }, [selectedClass, examTitle]);
 
   const calculateGrade = (marks) => {
     if (marks >= 90) return 'A+';
@@ -96,10 +115,10 @@ const TeacherResults = () => {
     try {
       const records = Object.entries(resultsData).map(([email, info]) => ({
         studentEmail: email,
-        title: examTitle,
+        examType: examTitle,
         subject: selectedClass?.subject,
         program: selectedClass?.program,
-        marks: info.marks,
+        marksObtained: info.marks,
         totalMarks: info.totalMarks,
         grade: calculateGrade(info.marks)
       }));
@@ -131,13 +150,13 @@ const TeacherResults = () => {
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>Enter exam scores and generate result sheets.</p>
         </div>
         <button className="btn-primary" onClick={publishGrades} disabled={isSaving}>
-          <i className="fas fa-save" style={{ marginRight: '8px' }}></i> {isSaving ? 'Publishing...' : 'Publish Grades'}
+          <i className="fas fa-save" style={{ marginRight: '8px' }}></i> {isSaving ? 'Saving...' : (hasPublishedGrades ? 'Update Grades' : 'Publish Grades')}
         </button>
       </div>
 
       <div className="controls-bar" style={{ background: '#fff', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', gap: '16px', marginBottom: '20px' }}>
         <div className="select-wrapper" style={{ position: 'relative' }}>
-          <select 
+          <select
             value={selectedClass ? `${selectedClass.subject}|${selectedClass.program}|${selectedClass.year}` : ''}
             onChange={(e) => {
               const [subject, program, year] = e.target.value.split('|');
@@ -152,7 +171,7 @@ const TeacherResults = () => {
           <i className="fas fa-chevron-down" style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none', fontSize: '12px' }}></i>
         </div>
         <div className="select-wrapper" style={{ position: 'relative' }}>
-          <select 
+          <select
             value={examTitle}
             onChange={(e) => setExamTitle(e.target.value)}
             style={{ appearance: 'none', background: '#f3f4f6', border: 'none', padding: '10px 36px 10px 16px', borderRadius: '8px', fontSize: '14px', outline: 'none', cursor: 'pointer', minWidth: '180px' }}
@@ -193,12 +212,12 @@ const TeacherResults = () => {
                 </td>
                 <td>100</td>
                 <td>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     value={resultsData[s.email]?.marks}
                     onChange={(e) => handleMarksChange(s.email, e.target.value)}
-                    className="grade-input" 
-                    style={{ width: '80px', padding: '8px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '13px', textAlign: 'center', outline: 'none' }} 
+                    className="grade-input"
+                    style={{ width: '80px', padding: '8px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '13px', textAlign: 'center', outline: 'none' }}
                   />
                 </td>
                 <td><strong>{calculateGrade(resultsData[s.email]?.marks || 0)}</strong></td>

@@ -60,10 +60,16 @@ const StudentDashboard = () => {
   // Pending Assignments calculation
   const pendingAssignmentsCount = assignments.filter(a => a.status === 'Pending').length;
 
-  // GPA calculation (Simplified: mapping grades to points)
-  const gradePoints = { 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'D': 1.0, 'F': 0.0 };
+  // GPA calculation (Only calculate if all enrolled subjects have grades)
+  const uniqueEnrolledSubjects = new Set(timetable.map(t => t.subject)).size;
+  const uniqueGradedSubjects = new Set(results.map(r => r.subject)).size;
+
+  const gradePoints = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'D': 1.0, 'F': 0.0 };
   const totalPoints = results.reduce((acc, r) => acc + (gradePoints[r.grade] || 0), 0);
-  const gpa = results.length > 0 ? (totalPoints / results.length).toFixed(2) : '0.00';
+  
+  const gpa = (uniqueEnrolledSubjects > 0 && uniqueGradedSubjects >= uniqueEnrolledSubjects) 
+    ? (totalPoints / results.length).toFixed(2) 
+    : 'Pending';
 
   const pendingFees = fees.filter(f => f.status === 'Pending');
   const totalPending = pendingFees.reduce((acc, f) => acc + f.amount, 0);
@@ -80,7 +86,7 @@ const StudentDashboard = () => {
   return (
     <div className="dashboard-content">
       <div className="page-header">
-        <h1>Welcome, {user.name || 'Student'}!</h1>
+        <h1>Welcome, {profile ? `${profile.firstName} ${profile.lastName}` : (user.name || 'Student')}!</h1>
         <p style={{ color: '#6b7280', fontSize: '14px' }}>Here is your academic overview for today.</p>
       </div>
 

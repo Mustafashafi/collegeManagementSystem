@@ -7,20 +7,33 @@ const StudentResults = () => {
   const [loading, setLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
+  const [timetable, setTimetable] = useState([]);
+
   useEffect(() => {
-    const fetchResults = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/students/results/${user.email}`);
-        const data = await response.json();
-        setResults(data);
+        const [resRes, profileRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/students/results/${user.email}`),
+          fetch(`${API_BASE_URL}/api/students/profile/${user.email}`)
+        ]);
+        
+        const resData = await resRes.json();
+        const profileData = await profileRes.json();
+        setResults(resData);
+
+        if (profileData && profileData.program) {
+          const ttRes = await fetch(`${API_BASE_URL}/api/students/timetable/${profileData.program}`);
+          const ttData = await ttRes.json();
+          setTimetable(ttData);
+        }
       } catch (err) {
-        console.error('Error fetching results:', err);
+        console.error('Error fetching data:', err);
         toast.error("Failed to load results.");
       } finally {
         setLoading(false);
       }
     };
-    if (user.email) fetchResults();
+    if (user.email) fetchData();
   }, [user.email]);
 
   if (loading) {
@@ -30,6 +43,16 @@ const StudentResults = () => {
       </div>
     );
   }
+
+  const uniqueEnrolledSubjects = new Set(timetable.map(t => t.subject)).size;
+  const uniqueGradedSubjects = new Set(results.map(r => r.subject)).size;
+
+  const gradePoints = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'D': 1.0, 'F': 0.0 };
+  const totalPoints = results.reduce((acc, r) => acc + (gradePoints[r.grade] || 0), 0);
+  
+  const gpa = (uniqueEnrolledSubjects > 0 && uniqueGradedSubjects >= uniqueEnrolledSubjects) 
+    ? (totalPoints / results.length).toFixed(2) 
+    : 'Pending';
 
   return (
     <div className="dashboard-content">
@@ -65,6 +88,13 @@ const StudentResults = () => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #e5e7eb', paddingTop: '20px' }}>
+          <div style={{ textAlign: 'right', paddingRight: '12px' }}>
+            <p style={{ fontSize: '13px', textTransform: 'uppercase', fontWeight: 600, color: '#6b7280', marginBottom: '4px' }}>Cumulative GPA</p>
+            <p style={{ fontSize: '24px', fontWeight: 800, color: '#1a1a1a', margin: 0 }}>{gpa}</p>
+          </div>
         </div>
       </div>
     </div>
