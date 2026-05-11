@@ -35,6 +35,20 @@ router.get('/dashboard/:email', async (req, res) => {
   }
 });
 
+// @route   GET /api/teachers/assignments-all/:email
+// @desc    Get all assignments for a teacher
+router.get('/assignments-all/:email', async (req, res) => {
+  try {
+    const teacher = await Teacher.findOne({ email: req.params.email });
+    if (!teacher) return res.status(404).json({ msg: 'Teacher not found' });
+
+    const assignments = await Assignment.find({ teacher: teacher.name }).sort({ dueDate: -1 });
+    res.json(assignments);
+  } catch (err) {
+    res.status(500).send('Server Error');
+  }
+});
+
 const upload = require('../middleware/upload');
 
 // @route   POST /api/teachers/assignments
@@ -166,6 +180,26 @@ router.put('/grade/:id', async (req, res) => {
     assignment.showGrade = showGrade;
     await assignment.save();
     res.json({ success: true, assignment });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   PUT /api/teachers/assignments/due-date
+// @desc    Update due date for an assignment (All students)
+router.put('/assignments/due-date', async (req, res) => {
+  try {
+    const { title, subject, teacherEmail, newDueDate } = req.body;
+    const teacher = await Teacher.findOne({ email: teacherEmail });
+    if (!teacher) return res.status(404).json({ msg: 'Teacher not found' });
+
+    const result = await Assignment.updateMany(
+      { title, subject, teacher: teacher.name },
+      { dueDate: new Date(newDueDate) }
+    );
+
+    res.json({ success: true, updatedCount: result.modifiedCount });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server Error');

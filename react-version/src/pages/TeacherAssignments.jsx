@@ -9,18 +9,20 @@ const TeacherAssignments = () => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [editingKey, setEditingKey] = useState(null);
+  const [tempDate, setTempDate] = useState('');
 
   useEffect(() => {
     const fetchAssignments = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/teachers/dashboard/${user.email}`);
+        const response = await fetch(`${API_BASE_URL}/api/teachers/assignments-all/${user.email}`);
         const result = await response.json();
         if (response.ok) {
           // Group assignments by title/subject to show consolidated view
-          const grouped = result.recentAssignments.reduce((acc, curr) => {
+          const grouped = result.reduce((acc, curr) => {
             const key = `${curr.title}-${curr.subject}`;
             if (!acc[key]) {
-              acc[key] = { ...curr, count: 0, submitted: 0 };
+              acc[key] = { ...curr, count: 0, submitted: 0, key };
             }
             acc[key].count += 1;
             if (curr.status === 'Submitted' || curr.status === 'Graded') acc[key].submitted += 1;
@@ -36,6 +38,37 @@ const TeacherAssignments = () => {
     };
     if (user.email) fetchAssignments();
   }, [user.email]);
+
+  const handleDateUpdate = async (asgn, newDate) => {
+    if (!newDate) return setEditingKey(null);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/teachers/assignments/due-date`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: asgn.title,
+          subject: asgn.subject,
+          teacherEmail: user.email,
+          newDueDate: newDate
+        })
+      });
+
+      if (response.ok) {
+        toast.success('Due date updated');
+        setAssignments(assignments.map(a => 
+          a.key === asgn.key ? { ...a, dueDate: newDate } : a
+        ));
+      } else {
+        toast.error('Failed to update due date');
+      }
+    } catch (err) {
+      console.error('Error updating date:', err);
+      toast.error('Connection error');
+    } finally {
+      setEditingKey(null);
+    }
+  };
 
   const handleDelete = async (title, subject) => {
     if (!window.confirm(`Are you sure you want to delete "${title}"?`)) return;
@@ -88,14 +121,40 @@ const TeacherAssignments = () => {
                 <tr key={idx}>
                   <td><strong>{asgn.title}</strong></td>
                   <td>{asgn.subject}</td>
-                  <td>{new Date(asgn.dueDate).toLocaleDateString()}</td>
+                  <td 
+                    onClick={() => {
+                      setEditingKey(asgn.key);
+                      setTempDate(new Date(asgn.dueDate).toISOString().split('T')[0]);
+                    }}
+                    style={{ cursor: 'pointer', position: 'relative' }}
+                  >
+                    {editingKey === asgn.key ? (
+                      <input 
+                        type="date" 
+                        autoFocus
+                        value={tempDate}
+                        onChange={(e) => setTempDate(e.target.value)}
+                        onBlur={() => handleDateUpdate(asgn, tempDate)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleDateUpdate(asgn, tempDate);
+                          if (e.key === 'Escape') setEditingKey(null);
+                        }}
+                        style={{ padding: '4px', borderRadius: '4px', border: '1px solid var(--primary)', fontSize: '13px' }}
+                      />
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 600 }}>
+                        {new Date(asgn.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        <i className="fas fa-edit" style={{ fontSize: '10px', opacity: 0.5 }}></i>
+                      </div>
+                    )}
+                  </td>
                   <td>{asgn.submitted} / {asgn.count || '?'}</td>
                   <td>
                     <span className="status-badge" style={{ 
-                      background: new Date(asgn.dueDate) > new Date() ? '#dbeafe' : '#f3f4f6', 
-                      color: new Date(asgn.dueDate) > new Date() ? '#1e40af' : '#4b5563' 
+                      background: new Date(asgn.dueDate).setHours(23, 59, 59, 999) > new Date() ? '#dbeafe' : '#f3f4f6', 
+                      color: new Date(asgn.dueDate).setHours(23, 59, 59, 999) > new Date() ? '#1e40af' : '#4b5563' 
                     }}>
-                      {new Date(asgn.dueDate) > new Date() ? 'Active' : 'Closed'}
+                      {new Date(asgn.dueDate).setHours(23, 59, 59, 999) > new Date() ? 'Active' : 'Closed'}
                     </span>
                   </td>
                   <td>

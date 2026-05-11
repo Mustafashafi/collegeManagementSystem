@@ -29,6 +29,16 @@ router.post('/assignments/submit/:id', (req, res, next) => {
         return res.status(404).json({ success: false, msg: 'Assignment not found' });
       }
 
+      // Check if deadline has passed (Allow until end of the day)
+      const now = new Date();
+      const deadline = new Date(assignment.dueDate);
+      deadline.setHours(23, 59, 59, 999); 
+
+      if (now > deadline) {
+        console.log(`❌ Submission Rejected: Deadline passed for ${assignment.title}`);
+        return res.status(400).json({ success: false, msg: 'Submission failed: The deadline for this assignment has passed.' });
+      }
+
       assignment.status = 'Submitted';
       assignment.submissionNotes = notes;
       if (req.file) {

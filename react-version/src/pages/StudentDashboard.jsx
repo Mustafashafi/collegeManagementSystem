@@ -29,11 +29,21 @@ const StudentDashboard = () => {
         const asgnData = await asgnRes.json();
         const resData = await resRes.json();
 
+        const seenResults = new Set();
+        const uniqueResults = [];
+        resData.forEach(r => {
+            const key = `${r.subject}-${r.examType}`;
+            if (!seenResults.has(key)) {
+                seenResults.add(key);
+                uniqueResults.push(r);
+            }
+        });
+
         setProfile(profileData);
         setFees(feesData);
         setAttendance(attData);
         setAssignments(asgnData);
-        setResults(resData);
+        setResults(uniqueResults);
 
         if (profileData && profileData.program) {
           const ttRes = await fetch(`${API_BASE_URL}/api/students/timetable/${profileData.program}`);
@@ -58,7 +68,7 @@ const StudentDashboard = () => {
   const attendanceRate = totalClasses > 0 ? ((presentClasses / totalClasses) * 100).toFixed(1) : '0';
 
   // Pending Assignments calculation
-  const pendingAssignmentsCount = assignments.filter(a => a.status === 'Pending').length;
+  const pendingAssignmentsCount = assignments.filter(a => a.status === 'Pending' && new Date(a.dueDate).setHours(23, 59, 59, 999) >= new Date()).length;
 
   // GPA calculation (Only calculate if all enrolled subjects have grades)
   const uniqueEnrolledSubjects = new Set(timetable.map(t => t.subject)).size;
@@ -123,16 +133,20 @@ const StudentDashboard = () => {
             <div key={idx} className="list-item" style={{ padding: '14px 20px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div className="list-info">
                 <h4 style={{ fontSize: '14px', fontWeight: 600 }}>{asgn.title}</h4>
-                <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>Due: {new Date(asgn.dueDate).toLocaleDateString()} • {asgn.teacher}</p>
+                <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>Due: {new Date(asgn.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} • {asgn.teacher}</p>
               </div>
               <span className="badge" style={{
                 padding: '4px 8px',
                 borderRadius: '6px',
                 fontSize: '11px',
                 fontWeight: 600,
-                background: asgn.status === 'Pending' ? '#fff7ed' : '#dcfce7',
-                color: asgn.status === 'Pending' ? '#9a3412' : '#166534'
-              }}>{asgn.status}</span>
+                background: asgn.status === 'Pending' 
+                  ? (new Date(asgn.dueDate).setHours(23, 59, 59, 999) < new Date() ? '#fee2e2' : '#fff7ed') 
+                  : '#dcfce7',
+                color: asgn.status === 'Pending' 
+                  ? (new Date(asgn.dueDate).setHours(23, 59, 59, 999) < new Date() ? '#b91c1c' : '#9a3412') 
+                  : '#166534'
+              }}>{asgn.status === 'Pending' && new Date(asgn.dueDate).setHours(23, 59, 59, 999) < new Date() ? 'LATE' : asgn.status}</span>
             </div>
           ))}
         </div>

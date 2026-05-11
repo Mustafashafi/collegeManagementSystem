@@ -59,7 +59,7 @@ const StudentAssignments = () => {
           <div className="as-info">
             <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '6px' }}>{as.title}</h3>
             <div className="as-meta" style={{ display: 'flex', gap: '15px', fontSize: '12px', color: '#6b7280' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><i className="fas fa-calendar-alt"></i> Due: {new Date(as.dueDate).toLocaleDateString()}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><i className="fas fa-calendar-alt"></i> Due: {new Date(as.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><i className="fas fa-user-tie"></i> {as.teacher}</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><i className="fas fa-book"></i> {as.subject}</span>
             </div>
@@ -105,13 +105,19 @@ const StudentAssignments = () => {
               fontSize: '11px', 
               fontWeight: 700, 
               textTransform: 'uppercase',
-              background: as.status === 'Pending' ? '#fff7ed' : '#f0fdf4',
-              color: as.status === 'Pending' ? '#9a3412' : '#166534',
-              border: as.status === 'Pending' ? '1px solid #ffedd5' : '1px solid #dcfce7'
+              background: as.status === 'Pending' 
+                ? (new Date(as.dueDate).setHours(23, 59, 59, 999) < new Date() ? '#fee2e2' : '#fff7ed') 
+                : '#f0fdf4',
+              color: as.status === 'Pending' 
+                ? (new Date(as.dueDate).setHours(23, 59, 59, 999) < new Date() ? '#b91c1c' : '#9a3412') 
+                : '#166534',
+              border: as.status === 'Pending' 
+                ? (new Date(as.dueDate).setHours(23, 59, 59, 999) < new Date() ? '1px solid #fecaca' : '1px solid #ffedd5') 
+                : '1px solid #dcfce7'
             }}>
-              {as.status}
+              {as.status === 'Pending' && new Date(as.dueDate).setHours(23, 59, 59, 999) < new Date() ? 'LATE (CLOSED)' : as.status}
             </span>
-            {as.status === 'Pending' && (
+            {as.status === 'Pending' && new Date(as.dueDate).setHours(23, 59, 59, 999) >= new Date() && (
               <button 
                 className="btn-submit-work" 
                 onClick={() => navigate('/student/submit-assignment', { state: { assignment: as } })}
