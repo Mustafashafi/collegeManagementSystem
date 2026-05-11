@@ -62,7 +62,7 @@ const StudentProfile = () => {
           <div className="profile-avatar-lg" style={{ width: '100px', height: '100px', borderRadius: '24px', background: '#fff', color: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px', fontWeight: 800, border: '4px solid rgba(255,255,255,0.2)' }}>{initials}</div>
           <div className="profile-title">
             <h1 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '4px' }}>{student.firstName} {student.lastName}</h1>
-            <p style={{ opacity: 0.8, fontSize: '14px' }}>{student.program} • {student.studentId} • {student.year || '1st Year'}</p>
+            <p style={{ opacity: 0.8, fontSize: '14px' }}>{student.program}</p>
             <div className="status-badge" style={{ marginTop: '12px', display: 'inline-block', padding: '4px 12px', background: 'rgba(255,255,255,0.1)', borderRadius: '20px', fontSize: '12px', fontWeight: 600 }}>{student.status}</div>
           </div>
           <div className="attendance-radial" style={{ marginLeft: 'auto', textAlign: 'center' }}>
