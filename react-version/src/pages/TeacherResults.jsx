@@ -66,7 +66,7 @@ const TeacherResults = () => {
         setStudents(data);
 
         // Fetch existing results
-        const resResponse = await fetch(`${API_BASE_URL}/api/results/class?subject=${encodeURIComponent(subject)}&examType=${encodeURIComponent(examTitle)}`);
+        const resResponse = await fetch(`${API_BASE_URL}/api/results/class?subject=${encodeURIComponent(subject)}&examType=${encodeURIComponent(examTitle)}&program=${encodeURIComponent(program)}`);
         const existingResults = resResponse.ok ? await resResponse.json() : [];
 
         const resultMap = {};

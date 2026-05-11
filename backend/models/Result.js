@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const ResultSchema = new mongoose.Schema({
   studentEmail: { type: String, required: true },
   subject: { type: String, required: true },
+  program: { type: String }, // Added program to differentiate same subject across different programs
   examType: { type: String, required: true }, // Midterm, Final, Quiz
   marksObtained: { type: Number, required: true },
   totalMarks: { type: Number, required: true },

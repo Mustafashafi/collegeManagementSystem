@@ -19,7 +19,20 @@ const StudentResults = () => {
         
         const resData = await resRes.json();
         const profileData = await profileRes.json();
-        setResults(resData);
+        
+        // Deduplicate results keeping only the latest per subject + examType
+        // (backend sorts by date: -1 so the first seen is the latest)
+        const seenResults = new Set();
+        const uniqueResults = [];
+        resData.forEach(r => {
+            const key = `${r.subject}-${r.examType}`;
+            if (!seenResults.has(key)) {
+                seenResults.add(key);
+                uniqueResults.push(r);
+            }
+        });
+        
+        setResults(uniqueResults);
 
         if (profileData && profileData.program) {
           const ttRes = await fetch(`${API_BASE_URL}/api/students/timetable/${profileData.program}`);
