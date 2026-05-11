@@ -4,7 +4,7 @@ import { NavLink } from 'react-router-dom';
 const TeacherLayout = ({ children }) => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const teacherName = user.name || 'Teacher';
-  
+
   const getInitials = (name) => {
     if (!name) return 'TR';
     const names = name.split(' ');
@@ -20,13 +20,13 @@ const TeacherLayout = ({ children }) => {
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
       {/* Sidebar */}
       <aside className="sidebar" style={{ width: '260px', background: '#fff', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column' }}>
-        <div className="sidebar-header" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid #f1f5f9' }}>
+        <div className="sidebar-header" style={{ height: '70px', padding: '0 24px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid #f1f5f9' }}>
           <div style={{ width: '32px', height: '32px', background: '#1a1a1a', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
             <i className="fas fa-graduation-cap"></i>
           </div>
           <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#111827' }}>EduSystem</h2>
         </div>
-        
+
         <div className="nav-menu" style={{ padding: '20px 0', flex: 1 }}>
           <div className="nav-section">
             <div className="nav-section-title" style={{ padding: '0 24px', fontSize: '11px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.5px' }}>Teacher Menu</div>
