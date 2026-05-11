@@ -54,6 +54,7 @@ import TeacherResults from './pages/TeacherResults';
 import TeacherEvents from './pages/TeacherEvents';
 import TeacherAddAssignment from './pages/TeacherAddAssignment';
 import TeacherViewSubmissions from './pages/TeacherViewSubmissions';
+import TeacherTimetable from './pages/TeacherTimetable';
 
 import StudentDashboard from './pages/StudentDashboard';
 import StudentProfile from './pages/StudentProfile';
@@ -210,6 +211,7 @@ function App() {
                 <Route path="classes" element={<TeacherClasses />} />
                 <Route path="attendance" element={<TeacherAttendance />} />
                 <Route path="assignments" element={<TeacherAssignments />} />
+                <Route path="timetable" element={<TeacherTimetable />} />
                 <Route path="results" element={<TeacherResults />} />
                 <Route path="events" element={<TeacherEvents />} />
                 <Route path="add-assignment" element={<TeacherAddAssignment />} />
