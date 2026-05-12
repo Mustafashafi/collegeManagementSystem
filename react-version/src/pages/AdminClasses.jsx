@@ -1,13 +1,31 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../services/api';
+import toast from 'react-hot-toast';
 
 const AdminClasses = () => {
-  const { data: classes, isLoading, isError } = useQuery({
+  const queryClient = useQueryClient();
+
+  const { data: classes, isLoading } = useQuery({
     queryKey: ['adminClasses'],
     queryFn: () => adminApi.getClasses().then(res => res.data),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => adminApi.deleteProgram(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['adminClasses']);
+      toast.success('Program deleted successfully');
+    },
+    onError: () => toast.error('Failed to delete program')
+  });
+
+  const handleDelete = (cls) => {
+    if (window.confirm(`Are you sure you want to delete "${cls.title}"? This cannot be undone.`)) {
+      deleteMutation.mutate(cls._id);
+    }
+  };
 
   return (
     <div className="dashboard-content">
@@ -26,13 +44,24 @@ const AdminClasses = () => {
           </div>
         ) : classes?.length === 0 ? (
           <div style={{ padding: '40px', textAlign: 'center', width: '100%' }}>
-            No classes found. Add some students or timetable records first.
+            No programs found. Click "Add New Class" to create one.
           </div>
         ) : classes?.map((cls, idx) => (
           <div className="class-card" key={idx}>
             <div className="class-header">
               <span className="class-title">{cls.title}</span>
-              <span className="class-badge">{cls.badge}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="class-badge">{cls.badge}</span>
+                <button
+                  onClick={() => handleDelete(cls)}
+                  title="Delete Program"
+                  style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '4px', opacity: 0.6, transition: '0.2s' }}
+                  onMouseEnter={e => e.target.style.opacity = 1}
+                  onMouseLeave={e => e.target.style.opacity = 0.6}
+                >
+                  <i className="fas fa-trash-alt"></i>
+                </button>
+              </div>
             </div>
             <div className="class-stats">
               <div><i className="fas fa-users"></i> {cls.students} Students</div>

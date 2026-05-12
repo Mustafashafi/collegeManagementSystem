@@ -280,7 +280,6 @@ function App() {
           <Route path="/librarian/dashboard" element={<LibrarianDashboard />} />
           <Route path="/librarian/books" element={<LibrarianBooks />} />
           <Route path="/librarian/books/add" element={<LibrarianAddBook />} />
-          <Route path="/librarian/issue" element={<LibrarianIssue />} />
           <Route path="/librarian/requests" element={<LibrarianRequests />} />
           <Route path="/librarian/records" element={<LibrarianRecords />} />
           <Route path="/librarian/events" element={<LibrarianEvents />} />

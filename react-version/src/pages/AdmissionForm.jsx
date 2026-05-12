@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import toast from 'react-hot-toast';
 import { API_BASE_URL } from '../config/api';
 
@@ -20,6 +20,20 @@ const AdmissionForm = () => {
   const [idFile, setIdFile] = useState(null);
   const [transcriptFile, setTranscriptFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [programs, setPrograms] = useState([]);
+
+  useEffect(() => {
+    const fetchPrograms = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/public/programs`);
+        const data = await response.json();
+        setPrograms(data);
+      } catch (err) {
+        console.error('Error fetching programs:', err);
+      }
+    };
+    fetchPrograms();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -158,10 +172,12 @@ const AdmissionForm = () => {
               <label>Select Program</label>
               <select name="program" value={formData.program} onChange={handleChange} required style={styles.formControl}>
                 <option value="">Choose a program of interest...</option>
-                <option>B.Sc Computer Science</option>
-                <option>BBA (Business Administration)</option>
-                <option>B.Eng (Mechanical Engineering)</option>
-                <option>B.A. English Literature</option>
+                {programs.map((p) => (
+                  <option key={p._id} value={p.name}>{p.name} ({p.year})</option>
+                ))}
+                {programs.length === 0 && (
+                  <option disabled>Loading programs...</option>
+                )}
               </select>
             </div>
           </div>

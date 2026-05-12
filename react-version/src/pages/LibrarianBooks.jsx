@@ -23,21 +23,21 @@ const LibrarianBooks = () => {
         </Link>
       </div>
 
-      <div className="filter-bar" style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
-        <div className="search-input" style={{ flex: 1, position: 'relative' }}>
-          <i className="fas fa-search" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}></i>
+      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', background: '#fff', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border)', alignItems: 'center' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#f3f4f6', borderRadius: '8px', padding: '0 14px' }}>
+          <i className="fas fa-search" style={{ color: 'var(--text-muted)', marginRight: '10px', fontSize: '14px' }}></i>
           <input 
             type="text" 
             placeholder="Search by title, author, or ISBN..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ width: '100%', padding: '10px 10px 10px 36px', background: '#fff', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+            style={{ width: '100%', padding: '10px 0', background: 'transparent', border: 'none', fontSize: '14px', outline: 'none', fontFamily: 'Inter' }} 
           />
         </div>
         <select 
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: '#fff', outline: 'none' }}
+          style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: '#fff', outline: 'none', fontSize: '14px', fontFamily: 'Inter', cursor: 'pointer' }}
         >
           <option value="">All Categories</option>
           {categories.map(c => <option key={c} value={c}>{c}</option>)}
@@ -80,7 +80,7 @@ const LibrarianBooks = () => {
                       fontWeight: 600, fontSize: '11px', 
                       color: book.availableCopies > 0 ? '#10b981' : '#ef4444',
                       background: book.availableCopies > 0 ? '#dcfce7' : '#fee2e2',
-                      padding: '4px 8px', borderRadius: '20px'
+                      padding: '4px 10px', borderRadius: '20px', whiteSpace: 'nowrap'
                     }}>
                       {book.availableCopies > 0 ? 'In Stock' : 'Out of Stock'}
                     </span>

@@ -4,7 +4,10 @@ const EventSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   date: { type: Date, required: true },
-  tag: { type: String, enum: ['ACADEMIC', 'HOLIDAY', 'EVENT', 'NOTICE'], default: 'EVENT' },
+  time: { type: String },
+  location: { type: String },
+  tag: { type: String, enum: ['ACADEMIC', 'HOLIDAY', 'EVENT', 'NOTICE', 'LIBRARY'], default: 'EVENT' },
+  audience: { type: String, enum: ['All', 'Student', 'Teacher', 'Librarian', 'Parent'], default: 'All' },
   tagBg: { type: String, default: '#f3f4f6' },
   tagColor: { type: String, default: '#111827' },
   createdBy: { type: String, default: 'Admin' }

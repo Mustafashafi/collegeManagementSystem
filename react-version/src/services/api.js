@@ -34,6 +34,10 @@ export const adminApi = {
   addLibrarian: (data) => api.post('/api/admin/librarians', data),
   deleteLibrarian: (id) => api.delete(`/api/admin/librarians/${id}`),
   getEvents: () => api.get('/api/events'),
+  addEvent: (data) => api.post('/api/events', data),
+  getPrograms: () => api.get('/api/admin/programs'),
+  addProgram: (data) => api.post('/api/admin/programs', data),
+  deleteProgram: (id) => api.delete(`/api/admin/programs/${id}`),
   getEventById: (id) => api.get(`/api/events/${id}`),
   getFilters: () => api.get('/api/admin/filters'),
 };

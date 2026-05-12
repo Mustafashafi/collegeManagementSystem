@@ -3,10 +3,18 @@ const router = express.Router();
 const Event = require('../models/Event');
 
 // @route   GET /api/events
-// @desc    Get all events
+// @desc    Get events with optional audience filtering
 router.get('/', async (req, res) => {
   try {
-    const events = await Event.find().sort({ date: -1 });
+    const { audience } = req.query;
+    const query = {};
+    
+    if (audience) {
+      // Show events specifically for this audience OR for everyone
+      query.$or = [{ audience: audience }, { audience: 'All' }];
+    }
+
+    const events = await Event.find(query).sort({ date: -1 });
     res.json(events);
   } catch (err) {
     console.error(err.message);

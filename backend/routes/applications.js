@@ -54,10 +54,15 @@ router.post('/', upload.fields([
       previousInstitution, passingYear, marks, program
     } = req.body;
 
-    // Generate Application ID: APP-YYYY-001
-    const count = await Application.countDocuments();
+    // Generate unique Application ID: APP-YYYY-NNN
     const year = new Date().getFullYear();
-    const appId = `APP-${year}-${(count + 1).toString().padStart(3, '0')}`;
+    const lastApp = await Application.findOne({ appId: { $regex: `^APP-${year}` } }).sort({ appId: -1 });
+    let nextNum = 1;
+    if (lastApp) {
+      const lastNum = parseInt(lastApp.appId.split('-')[2]);
+      nextNum = lastNum + 1;
+    }
+    const appId = `APP-${year}-${nextNum.toString().padStart(3, '0')}`;
 
     const newApplication = new Application({
       appId,

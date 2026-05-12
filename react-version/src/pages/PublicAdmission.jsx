@@ -1,8 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { API_BASE_URL } from '../config/api';
 
 const PublicAdmission = () => {
+  const [programs, setPrograms] = useState([]);
+  const [loadingPrograms, setLoadingPrograms] = useState(true);
+
+  useEffect(() => {
+    const fetchPrograms = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/public/programs`);
+        const data = await response.json();
+        setPrograms(data);
+      } catch (err) {
+        console.error('Error fetching programs:', err);
+      } finally {
+        setLoadingPrograms(false);
+      }
+    };
+    fetchPrograms();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -74,12 +91,14 @@ const PublicAdmission = () => {
                 <h3 className="section-title">Academic Details</h3>
                 <div className="form-group full-width">
                   <label>Select Program</label>
-                  <select className="form-input" required>
-                    <option value="">Choose a program...</option>
-                    <option>B.Sc Computer Science</option>
-                    <option>BBA (Business Administration)</option>
-                    <option>B.Eng (Mechanical Engineering)</option>
-                    <option>B.A. English Literature</option>
+                  <select className="form-input" required disabled={loadingPrograms}>
+                    <option value="">{loadingPrograms ? 'Loading programs...' : 'Choose a program...'}</option>
+                    {programs.map((p) => (
+                      <option key={p._id} value={p.name}>{p.name} ({p.year})</option>
+                    ))}
+                    {!loadingPrograms && programs.length === 0 && (
+                      <option disabled>No active programs available</option>
+                    )}
                   </select>
                 </div>
                 <div className="form-group">

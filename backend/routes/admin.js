@@ -313,23 +313,23 @@ router.post('/teacher-attendance', async (req, res) => {
 const Timetable = require('../models/Timetable');
 
 // @route   GET /api/admin/classes
-// @desc    Get all unique classes (Program + Year)
+// @desc    Get all classes (Program + Year) with student counts and subjects
 router.get('/classes', async (req, res) => {
   try {
-    const classes = await Student.aggregate([
-      { $group: { _id: { program: "$program", year: "$year" }, studentCount: { $sum: 1 } } }
+    const programs = await Program.find({ isActive: true });
+    const students = await Student.aggregate([
+      { $group: { _id: { program: "$program", year: "$year" }, count: { $sum: 1 } } }
     ]);
 
-    const timetable = await Timetable.find();
-    
-    const result = classes.map(c => {
-      const classTimetable = timetable.filter(t => t.program === c._id.program && t.year === c._id.year);
+    const result = programs.map(p => {
+      const studentStat = students.find(s => s._id.program === p.name && s._id.year === p.year);
       return {
-        title: c._id.program,
-        badge: c._id.year,
-        students: c.studentCount,
-        subjectsCount: classTimetable.length,
-        subjects: classTimetable.map(t => ({ name: t.subject, teacher: t.teacher }))
+        _id: p._id,
+        title: p.name,
+        badge: p.year,
+        students: studentStat ? studentStat.count : 0,
+        subjectsCount: p.subjects.length,
+        subjects: p.subjects.map(s => ({ name: s.name, teacher: s.teacher || 'Unassigned' }))
       };
     });
 
@@ -392,7 +392,7 @@ router.get('/teacher-attendance/report', async (req, res) => {
 // @desc    Get unique programs and departments for filters
 router.get('/filters', async (req, res) => {
   try {
-    const programs = await Student.distinct('program');
+    const programs = await Program.distinct('name', { isActive: true });
     const departments = await Teacher.distinct('department');
     res.json({ programs, departments });
   } catch (err) {
@@ -439,6 +439,123 @@ router.delete('/librarians/:id', async (req, res) => {
     await User.findByIdAndDelete(req.params.id);
     res.json({ success: true, msg: 'Librarian deleted' });
   } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
+const Program = require('../models/Program');
+
+// @route   GET /api/admin/programs
+// @desc    Get all active programs
+router.get('/programs', async (req, res) => {
+  try {
+    const programs = await Program.find({ isActive: true }).sort({ name: 1 });
+    res.json(programs);
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
+// @route   POST /api/admin/programs
+// @desc    Add a new program with subjects and automate teacher portals
+router.post('/programs', async (req, res) => {
+  try {
+    const { name, year, subjects } = req.body;
+    
+    // 1. Save the Program
+    const newProgram = new Program(req.body);
+    await newProgram.save();
+
+    // 2. Automate Teacher Logic
+    for (const sub of subjects) {
+      if (sub.teacherEmail) {
+        let teacher = await Teacher.findOne({ email: sub.teacherEmail });
+        const classLabel = `${name} (${year})`;
+
+        if (teacher) {
+          // Update existing teacher
+          if (!teacher.assignedClasses.includes(classLabel)) {
+            teacher.assignedClasses.push(classLabel);
+          }
+          if (!teacher.subjects.includes(sub.name)) {
+            teacher.subjects.push(sub.name);
+          }
+          await teacher.save();
+        } else {
+          // Create new teacher
+          const teacherId = `T-${Date.now().toString().slice(-4)}`;
+          const newTeacher = new Teacher({
+            name: sub.teacher || 'Unassigned Teacher',
+            email: sub.teacherEmail,
+            employeeId: teacherId,
+            department: 'General', // Default department
+            designation: 'Lecturer',
+            assignedClasses: [classLabel],
+            subjects: [sub.name]
+          });
+          await newTeacher.save();
+
+          // Create portal account
+          const newUser = new User({
+            name: sub.teacher || 'Unassigned Teacher',
+            email: sub.teacherEmail,
+            password: 'teacher123', // default password
+            role: 'teacher'
+          });
+          await newUser.save();
+        }
+      }
+    }
+
+    res.json({ success: true, program: newProgram });
+  } catch (err) {
+    console.error('Program creation error:', err);
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
+// @route   DELETE /api/admin/programs/:id
+// @desc    Delete a program and clean up orphaned teachers
+router.delete('/programs/:id', async (req, res) => {
+  try {
+    const program = await Program.findById(req.params.id);
+    if (!program) return res.status(404).json({ success: false, msg: 'Program not found' });
+
+    const classLabel = `${program.name} (${program.year})`;
+
+    // Check each teacher in this program's subjects
+    for (const sub of program.subjects) {
+      if (!sub.teacherEmail) continue;
+
+      // Count how many OTHER programs also use this teacher
+      const otherPrograms = await Program.countDocuments({
+        _id: { $ne: program._id },
+        'subjects.teacherEmail': sub.teacherEmail
+      });
+
+      if (otherPrograms === 0) {
+        // Teacher is exclusive to this program — delete everything
+        await Teacher.findOneAndDelete({ email: sub.teacherEmail });
+        await User.findOneAndDelete({ email: sub.teacherEmail });
+      } else {
+        // Teacher is shared — just remove this class from their assignments
+        await Teacher.findOneAndUpdate(
+          { email: sub.teacherEmail },
+          { 
+            $pull: { 
+              assignedClasses: classLabel,
+              subjects: sub.name 
+            } 
+          }
+        );
+      }
+    }
+
+    // Delete the program itself
+    await Program.findByIdAndDelete(req.params.id);
+    res.json({ success: true, msg: 'Program and exclusive teachers deleted' });
+  } catch (err) {
+    console.error('Program delete error:', err);
     res.status(500).json({ success: false, msg: err.message });
   }
 });
