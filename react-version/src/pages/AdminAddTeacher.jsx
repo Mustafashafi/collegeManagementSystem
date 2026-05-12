@@ -1,7 +1,36 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
+import { adminApi } from '../services/api';
+import toast from 'react-hot-toast';
 
 const AdminAddTeacher = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    name: '', email: '', phone: '', teacherId: '',
+    department: 'Computer Science', designation: 'Professor'
+  });
+
+  const mutation = useMutation({
+    mutationFn: (data) => adminApi.addTeacher(data),
+    onSuccess: () => {
+      toast.success('Teacher registered successfully!');
+      navigate('/admin/teachers');
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.msg || 'Failed to register teacher');
+    }
+  });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    mutation.mutate(formData);
+  };
+
   return (
     <div className="dashboard-content">
       <div className="page-header">
@@ -10,19 +39,19 @@ const AdminAddTeacher = () => {
       </div>
 
       <div className="form-card">
-        <form className="form-grid">
+        <form className="form-grid" onSubmit={handleSubmit}>
           <h4 className="section-subtitle">Professional Information</h4>
           <div className="form-group">
             <label>Full Name</label>
-            <input type="text" className="form-control" placeholder="Dr. John Doe" />
+            <input type="text" name="name" className="form-control" value={formData.name} onChange={handleChange} required />
           </div>
           <div className="form-group">
             <label>Teacher ID</label>
-            <input type="text" className="form-control" placeholder="T-10XX" />
+            <input type="text" name="teacherId" className="form-control" value={formData.teacherId} onChange={handleChange} required />
           </div>
           <div className="form-group">
             <label>Department</label>
-            <select className="form-control">
+            <select name="department" className="form-control" value={formData.department} onChange={handleChange}>
               <option>Computer Science</option>
               <option>Physics</option>
               <option>Mathematics</option>
@@ -31,39 +60,30 @@ const AdminAddTeacher = () => {
           </div>
           <div className="form-group">
             <label>Designation</label>
-            <select className="form-control">
+            <select name="designation" className="form-control" value={formData.designation} onChange={handleChange}>
               <option>Professor</option>
               <option>Assistant Professor</option>
               <option>Lecturer</option>
             </select>
           </div>
-          <div className="form-group">
-            <label>Qualification</label>
-            <input type="text" className="form-control" placeholder="Ph.D, M.Tech" />
-          </div>
-          <div className="form-group">
-            <label>Experience (Years)</label>
-            <input type="number" className="form-control" placeholder="5" />
-          </div>
 
           <h4 className="section-subtitle">Contact Details</h4>
           <div className="form-group">
             <label>Email Address</label>
-            <input type="email" className="form-control" placeholder="john.doe@example.com" />
+            <input type="email" name="email" className="form-control" value={formData.email} onChange={handleChange} required />
           </div>
           <div className="form-group">
             <label>Phone Number</label>
-            <input type="tel" className="form-control" placeholder="+1 ..." />
+            <input type="tel" name="phone" className="form-control" value={formData.phone} onChange={handleChange} />
           </div>
-          <div className="form-group">
-            <label>Joining Date</label>
-            <input type="date" className="form-control" />
+
+          <div className="form-footer" style={{ gridColumn: 'span 2', marginTop: '20px' }}>
+            <Link to="/admin/teachers" className="btn-cancel">Cancel</Link>
+            <button className="btn-submit" type="submit" disabled={mutation.isLoading}>
+              {mutation.isLoading ? 'Registering...' : 'Register Teacher'}
+            </button>
           </div>
         </form>
-        <div className="form-footer">
-          <Link to="/admin/teachers" className="btn-cancel">Cancel</Link>
-          <button className="btn-submit" type="button">Register Teacher</button>
-        </div>
       </div>
     </div>
   );

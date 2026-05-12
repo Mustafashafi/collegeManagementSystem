@@ -1,17 +1,32 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { eventsData } from '../data/eventsData';
+import { useQuery } from '@tanstack/react-query';
+import { adminApi } from '../services/api';
 
 const PublicEventDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const event = eventsData.find(e => e.id === parseInt(id));
+
+  const { data: event, isLoading, isError } = useQuery({
+    queryKey: ['publicEvent', id],
+    queryFn: () => adminApi.getEventById(id).then(res => res.data),
+    enabled: !!id,
+  });
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  if (!event) {
+  if (isLoading) {
+    return (
+      <div className="container" style={{ padding: '10rem 2rem', textAlign: 'center' }}>
+        <i className="fas fa-spinner fa-spin" style={{ fontSize: '3rem', color: 'var(--primary)' }}></i>
+        <p style={{ marginTop: '1rem' }}>Loading event details...</p>
+      </div>
+    );
+  }
+
+  if (isError || !event) {
     return (
       <div className="container" style={{ padding: '10rem 2rem', textAlign: 'center' }}>
         <h2>Event Not Found</h2>
@@ -33,7 +48,7 @@ const PublicEventDetail = () => {
           </div>
           <h1 data-aos="fade-up">{event.title}</h1>
           <div className="event-meta" style={{ justifyContent: 'center', color: 'rgba(255,255,255,0.9)', fontSize: '1.1rem' }} data-aos="fade-up" data-aos-delay="100">
-            <span><i className="fas fa-calendar-alt"></i> {event.date} {event.month}, 2026</span>
+            <span><i className="fas fa-calendar-alt"></i> {new Date(event.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
             <span><i className="fas fa-clock"></i> {event.time}</span>
             <span><i className="fas fa-map-marker-alt"></i> {event.location}</span>
           </div>
@@ -44,10 +59,10 @@ const PublicEventDetail = () => {
         <div className="event-detail-card">
           <div className="event-detail-content">
             <h2>About the Event</h2>
-            <p>{event.fullDetails}</p>
+            <p>{event.description || event.fullDetails}</p>
             
             <div className="event-feature-grid">
-              {event.features.map((feature, idx) => (
+              {(event.features || []).map((feature, idx) => (
                 <div key={idx} className="event-feature-item">
                   <div className="event-feature-icon">
                     <i className={feature.icon}></i>
@@ -64,11 +79,11 @@ const PublicEventDetail = () => {
           <div className="event-sidebar">
             <div className="event-detail-sidebar-box">
               <h3>Registration</h3>
-              <p>{event.registrationInfo}</p>
+              <p>{event.registrationInfo || 'Please register to attend this event.'}</p>
               
               <div className="event-price-tag">
                 <div className="event-price-label">Ticket Price</div>
-                <div className="event-price-value">{event.price}</div>
+                <div className="event-price-value">{event.price || 'Free'}</div>
               </div>
 
               <button className="btn btn-primary" style={{ width: '100%', padding: '1.25rem' }}>

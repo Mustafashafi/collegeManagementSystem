@@ -1,20 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { adminApi } from '../services/api';
 
 const AdminClasses = () => {
-  const classes = [
-    {
-      title: "B.Sc Computer Science",
-      badge: "2nd Year",
-      students: 120,
-      subjectsCount: 5,
-      subjects: [
-        { name: "Data Structures", teacher: "Prof. Smith" },
-        { name: "Computer Networks", teacher: "Dr. Davis" },
-        { name: "Mathematics III", teacher: "Prof. Johnson" }
-      ]
-    }
-  ];
+  const { data: classes, isLoading, isError } = useQuery({
+    queryKey: ['adminClasses'],
+    queryFn: () => adminApi.getClasses().then(res => res.data),
+  });
 
   return (
     <div className="dashboard-content">
@@ -27,7 +20,15 @@ const AdminClasses = () => {
       </div>
 
       <div className="grid-cards">
-        {classes.map((cls, idx) => (
+        {isLoading ? (
+          <div style={{ padding: '40px', textAlign: 'center', width: '100%' }}>
+            <i className="fas fa-spinner fa-spin"></i> Loading classes...
+          </div>
+        ) : classes?.length === 0 ? (
+          <div style={{ padding: '40px', textAlign: 'center', width: '100%' }}>
+            No classes found. Add some students or timetable records first.
+          </div>
+        ) : classes?.map((cls, idx) => (
           <div className="class-card" key={idx}>
             <div className="class-header">
               <span className="class-title">{cls.title}</span>

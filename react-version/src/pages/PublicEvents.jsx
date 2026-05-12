@@ -1,9 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { eventsData } from '../data/eventsData';
+import { useQuery } from '@tanstack/react-query';
+import { adminApi } from '../services/api';
 
 const PublicEvents = () => {
   const navigate = useNavigate();
+  const { data: events, isLoading } = useQuery({
+    queryKey: ['publicEvents'],
+    queryFn: () => adminApi.getEvents().then(res => res.data),
+  });
 
   return (
     <>
@@ -16,20 +21,22 @@ const PublicEvents = () => {
 
       <section className="container">
         <div className="events-grid">
-          {eventsData.map((event, index) => (
+          {isLoading ? (
+            <div style={{ padding: '40px', textAlign: 'center', width: '100%' }}><i className="fas fa-spinner fa-spin"></i> Loading...</div>
+          ) : events?.map((event, index) => (
             <div 
-              key={event.id} 
+              key={event._id || index} 
               className="event-card" 
               data-aos="fade-up" 
               data-aos-delay={index * 100}
-              onClick={() => navigate(`/events/${event.id}`)}
+              onClick={() => navigate(`/events/${event._id}`)}
               style={{ cursor: 'pointer' }}
             >
               <div className="event-img">
-                <img src={event.image} alt={event.title} />
+                <img src={event.image || 'https://via.placeholder.com/400x250'} alt={event.title} />
                 <div className="event-date">
-                  <span>{event.date}</span>
-                  <small>{event.month}</small>
+                  <span>{new Date(event.date).getDate()}</span>
+                  <small>{new Date(event.date).toLocaleString('default', { month: 'short' })}</small>
                 </div>
               </div>
               <div className="event-content">

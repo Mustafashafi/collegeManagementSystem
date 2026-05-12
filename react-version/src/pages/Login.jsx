@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-
-import { API_BASE_URL } from '../config/api';
+import { authApi } from '../services/api';
+import toast from 'react-hot-toast';
 
 const Login = () => {
   const [role, setRole] = useState('admin');
@@ -10,9 +10,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const location = useLocation();
 
-  // Clear session on mount to handle logouts properly
   useEffect(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -34,23 +32,18 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, role }),
-      });
-
-      const data = await response.json();
+      const { data } = await authApi.login({ email, password, role });
 
       if (data.success) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        toast.success('Welcome back!');
         navigate(roleRoutes[data.user.role] || '/admin');
       } else {
         setError(data.message);
       }
     } catch (err) {
-      setError('Cannot connect to server. Please try again.');
+      setError(err.response?.data?.message || 'Cannot connect to server. Please try again.');
     } finally {
       setLoading(false);
     }

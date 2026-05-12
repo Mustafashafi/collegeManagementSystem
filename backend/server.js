@@ -37,6 +37,7 @@ app.use('/api/email', require('./routes/email'));
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/applications', require('./routes/applications'));
 app.use('/api/students', require('./routes/students'));
+app.use('/api/admin', require('./routes/admin'));
 
 app.get('/', (req, res) => {
     res.send("College ERP Backend is running...");

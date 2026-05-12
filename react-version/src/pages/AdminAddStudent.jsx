@@ -1,7 +1,37 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
+import { adminApi } from '../services/api';
+import toast from 'react-hot-toast';
 
 const AdminAddStudent = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    firstName: '', lastName: '', dob: '', gender: 'Male',
+    email: '', phone: '', studentId: '', program: 'B.Sc Computer Science',
+    year: '1st Year'
+  });
+
+  const mutation = useMutation({
+    mutationFn: (data) => adminApi.addStudent(data),
+    onSuccess: () => {
+      toast.success('Student registered successfully!');
+      navigate('/admin/students');
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.msg || 'Failed to register student');
+    }
+  });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    mutation.mutate(formData);
+  };
+
   return (
     <div className="dashboard-content">
       <div className="page-header">
@@ -10,23 +40,23 @@ const AdminAddStudent = () => {
       </div>
 
       <div className="form-card">
-        <form className="form-grid">
+        <form className="form-grid" onSubmit={handleSubmit}>
           <h4 className="section-subtitle">Personal Information</h4>
           <div className="form-group">
             <label>First Name</label>
-            <input type="text" className="form-control" placeholder="John" />
+            <input type="text" name="firstName" className="form-control" value={formData.firstName} onChange={handleChange} required />
           </div>
           <div className="form-group">
             <label>Last Name</label>
-            <input type="text" className="form-control" placeholder="Doe" />
+            <input type="text" name="lastName" className="form-control" value={formData.lastName} onChange={handleChange} required />
           </div>
           <div className="form-group">
             <label>Date of Birth</label>
-            <input type="date" className="form-control" />
+            <input type="date" name="dob" className="form-control" value={formData.dob} onChange={handleChange} />
           </div>
           <div className="form-group">
             <label>Gender</label>
-            <select className="form-control">
+            <select name="gender" className="form-control" value={formData.gender} onChange={handleChange}>
               <option>Male</option>
               <option>Female</option>
               <option>Other</option>
@@ -34,63 +64,44 @@ const AdminAddStudent = () => {
           </div>
           <div className="form-group">
             <label>Email Address</label>
-            <input type="email" className="form-control" placeholder="john.doe@example.com" />
+            <input type="email" name="email" className="form-control" value={formData.email} onChange={handleChange} required />
           </div>
           <div className="form-group">
             <label>Phone Number</label>
-            <input type="tel" className="form-control" placeholder="+1 234 567 890" />
+            <input type="tel" name="phone" className="form-control" value={formData.phone} onChange={handleChange} />
           </div>
 
           <h4 className="section-subtitle">Academic Details</h4>
           <div className="form-group">
             <label>Student ID / Roll No</label>
-            <input type="text" className="form-control" placeholder="S-2026-001" />
-          </div>
-          <div className="form-group">
-            <label>Admission Date</label>
-            <input type="date" className="form-control" />
+            <input type="text" name="studentId" className="form-control" value={formData.studentId} onChange={handleChange} required />
           </div>
           <div className="form-group">
             <label>Course / Program</label>
-            <select className="form-control">
+            <select name="program" className="form-control" value={formData.program} onChange={handleChange}>
               <option>B.Sc Computer Science</option>
               <option>B.A English</option>
-              <option>B.B.A</option>
+              <option>B.B.A Management</option>
               <option>M.Sc Physics</option>
             </select>
           </div>
           <div className="form-group">
             <label>Academic Year / Level</label>
-            <select className="form-control">
+            <select name="year" className="form-control" value={formData.year} onChange={handleChange}>
               <option>1st Year</option>
               <option>2nd Year</option>
               <option>3rd Year</option>
               <option>4th Year</option>
             </select>
           </div>
-          <div className="form-group">
-            <label>Section (Optional)</label>
-            <input type="text" className="form-control" placeholder="A" />
-          </div>
 
-          <h4 className="section-subtitle">Emergency Contact</h4>
-          <div className="form-group">
-            <label>Guardian Name</label>
-            <input type="text" className="form-control" placeholder="Full Name" />
-          </div>
-          <div className="form-group">
-            <label>Relationship</label>
-            <input type="text" className="form-control" placeholder="Father / Mother" />
-          </div>
-          <div className="form-group">
-            <label>Emergency Phone</label>
-            <input type="tel" className="form-control" placeholder="+1 ..." />
+          <div className="form-footer" style={{ gridColumn: 'span 2', marginTop: '20px' }}>
+            <Link to="/admin/students" className="btn-cancel">Cancel</Link>
+            <button className="btn-submit" type="submit" disabled={mutation.isLoading}>
+              {mutation.isLoading ? 'Registering...' : 'Register Student'}
+            </button>
           </div>
         </form>
-        <div className="form-footer">
-          <Link to="/admin/students" className="btn-cancel">Cancel</Link>
-          <button className="btn-submit" type="button">Register Student</button>
-        </div>
       </div>
     </div>
   );

@@ -1,39 +1,81 @@
 import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { adminApi } from '../services/api';
+import toast from 'react-hot-toast';
 
 const AdminTeacherAttendance = () => {
+  const queryClient = useQueryClient();
   const [view, setView] = useState('daily');
   const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const stats = [
-    { label: "Total Faculty", value: "142", trend: "2 new this month", trendColor: "#10b981", trendIcon: "fas fa-caret-up" },
-    { label: "Present Today", value: "134", trend: "94.3% Attendance", trendColor: "#10b981", trendIcon: "fas fa-check-circle" },
-    { label: "Absent", value: "5", trend: "3 on leave", trendColor: "#ef4444", trendIcon: "fas fa-exclamation-circle" },
-    { label: "Late Arrival", value: "3", trend: "2.1% rate", trendColor: "#f59e0b", trendIcon: "fas fa-clock" },
-  ];
+  const { data: teachers } = useQuery({
+    queryKey: ['adminTeachers'],
+    queryFn: () => adminApi.getTeachers().then(res => res.data),
+  });
 
-  const roster = [
-    { name: "Prof. Robert Smith", id: "T-1001", initials: "RS", dept: "Computer Science", role: "Head of Dept.", checkIn: "08:45 AM", status: "Present", statusClass: "status-present" },
-    { name: "Dr. Jane Doe", id: "T-1002", initials: "JD", dept: "Physics", role: "Professor", checkIn: "09:05 AM", status: "Late", statusClass: "status-late" },
-    { name: "Alice Brown", id: "T-1005", initials: "AB", dept: "Mathematics", role: "Lecturer", checkIn: "--:--", status: "Absent", statusClass: "status-absent" },
-    { name: "Mark Lee", id: "T-1008", initials: "ML", dept: "English", role: "Assistant Professor", checkIn: "--:--", status: "On Leave", statusClass: "status-on-leave" },
-  ];
+  const { data: attendanceData, isLoading } = useQuery({
+    queryKey: ['teacherAttendance', selectedDate],
+    queryFn: () => adminApi.getTeacherAttendance(selectedDate).then(res => res.data),
+  });
 
-  const monthlyData = [
-    { name: "Prof. Robert Smith", id: "T-1001", initials: "RS", workingDays: 22, present: 21, absent: 0, late: 1, leaves: 0, percentage: "95.4%" },
-    { name: "Dr. Jane Doe", id: "T-1002", initials: "JD", workingDays: 22, present: 19, absent: 1, late: 2, leaves: 0, percentage: "86.3%" },
-    { name: "Alice Brown", id: "T-1005", initials: "AB", workingDays: 22, present: 20, absent: 2, late: 0, leaves: 0, percentage: "90.9%" },
-    { name: "Mark Lee", id: "T-1008", initials: "ML", workingDays: 22, present: 15, absent: 2, late: 0, leaves: 5, percentage: "68.1%" },
-  ];
+  const { data: monthlyReport } = useQuery({
+    queryKey: ['teacherAttendanceReport', selectedDate.substring(0, 7)],
+    queryFn: () => {
+      const [year, month] = selectedDate.split('-');
+      return adminApi.getTeacherAttendanceReport(month, year).then(res => res.data);
+    },
+  });
 
-  const dailyLogs = [
-    { date: "Oct 24, 2026", checkIn: "08:45 AM", checkOut: "04:30 PM", status: "Present", statusClass: "status-present", remarks: "Regular" },
-    { date: "Oct 23, 2026", checkIn: "08:50 AM", checkOut: "04:35 PM", status: "Present", statusClass: "status-present", remarks: "Regular" },
-    { date: "Oct 22, 2026", checkIn: "09:15 AM", checkOut: "04:30 PM", status: "Late", statusClass: "status-late", remarks: "Traffic delay" },
-    { date: "Oct 21, 2026", checkIn: "08:40 AM", checkOut: "04:45 PM", status: "Present", statusClass: "status-present", remarks: "Regular" },
-    { date: "Oct 20, 2026", checkIn: "--:--", checkOut: "--:--", status: "Absent", statusClass: "status-absent", remarks: "Medical" },
-  ];
+  const markMutation = useMutation({
+    mutationFn: (data) => adminApi.markTeacherAttendance(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['teacherAttendance', selectedDate]);
+      toast.success('Attendance updated');
+    },
+    onError: () => toast.error('Failed to update attendance')
+  });
+
+  const attendanceMap = {};
+  attendanceData?.forEach(record => {
+    attendanceMap[record.teacherEmail] = record;
+  });
+
+  const { data: teacherHistory } = useQuery({
+    queryKey: ['teacherHistory', selectedTeacher?.email, selectedDate.substring(0, 7)],
+    queryFn: () => {
+      const [year, month] = selectedDate.split('-');
+      return adminApi.getTeacherAttendanceReport(month, year, selectedTeacher.email).then(res => res.data);
+    },
+    enabled: !!selectedTeacher,
+  });
+
+  const getInitials = (name) => {
+    return name?.split(' ').map(n => n[0]).join('').toUpperCase() || '??';
+  };
+
+  const roster = teachers?.map(t => {
+    const record = attendanceMap[t.email];
+    return {
+      ...t,
+      checkIn: record?.checkIn || '--:--',
+      status: record?.status || 'Pending',
+      statusClass: record?.status === 'Present' ? 'status-present' : record?.status === 'Absent' ? 'status-absent' : record?.status === 'Late' ? 'status-late' : 'status-unpaid'
+    };
+  }) || [];
+
+  const handleMark = (email, status) => {
+    const checkIn = status === 'Present' ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
+    markMutation.mutate({
+      teacherEmail: email,
+      status,
+      date: selectedDate,
+      checkIn
+    });
+  };
 
   if (selectedTeacher) {
+    const history = Array.isArray(teacherHistory) ? teacherHistory : [];
     return (
       <div className="dashboard-content">
         <div className="page-header">
@@ -46,7 +88,7 @@ const AdminTeacherAttendance = () => {
               <p>Individual attendance records for the current academic month.</p>
             </div>
           </div>
-          <button className="btn-primary">
+          <button className="btn-primary" onClick={() => window.print()}>
             <i className="fas fa-print"></i> Print Log
           </button>
         </div>
@@ -54,10 +96,10 @@ const AdminTeacherAttendance = () => {
         <div className="panel" style={{ marginBottom: '24px' }}>
           <div className="panel-body" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div className="teacher-info">
-              <div className="teacher-avatar" style={{ width: '60px', height: '60px', fontSize: '20px' }}>{selectedTeacher.initials}</div>
+              <div className="teacher-avatar" style={{ width: '60px', height: '60px', fontSize: '20px' }}>{getInitials(selectedTeacher.name)}</div>
               <div className="teacher-details">
                 <h2 style={{ fontSize: '20px', fontWeight: 700 }}>{selectedTeacher.name}</h2>
-                <p style={{ fontSize: '14px' }}>ID: {selectedTeacher.id} • Computer Science Department</p>
+                <p style={{ fontSize: '14px' }}>{selectedTeacher.email} • Faculty</p>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '30px' }}>
@@ -83,32 +125,30 @@ const AdminTeacherAttendance = () => {
 
         <div className="panel">
           <div className="panel-header">
-            <h3>Attendance History (October 2026)</h3>
-            <div className="select-wrapper">
-              <select><option>October 2026</option><option>September 2026</option></select>
-              <i className="fas fa-chevron-down"></i>
-            </div>
+            <h3>Attendance History ({selectedDate.substring(0, 7)})</h3>
           </div>
           <table className="data-table">
             <thead>
               <tr>
                 <th>Date</th>
                 <th>Check-In</th>
-                <th>Check-Out</th>
-                <th>Working Hours</th>
                 <th>Status</th>
                 <th>Remarks</th>
               </tr>
             </thead>
             <tbody>
-              {dailyLogs.map((log, idx) => (
+              {history.length === 0 ? (
+                <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>No records found for this month.</td></tr>
+              ) : history.map((log, idx) => (
                 <tr key={idx}>
-                  <td><strong>{log.date}</strong></td>
+                  <td><strong>{new Date(log.date).toLocaleDateString()}</strong></td>
                   <td>{log.checkIn}</td>
-                  <td>{log.checkOut}</td>
-                  <td>{log.checkIn !== '--:--' ? "7.5 hrs" : "--"}</td>
-                  <td><span className={`status-badge ${log.statusClass}`}>{log.status}</span></td>
-                  <td style={{ color: 'var(--text-muted)' }}>{log.remarks}</td>
+                  <td>
+                    <span className={`status-badge ${log.status === 'Present' ? 'status-present' : log.status === 'Absent' ? 'status-absent' : 'status-late'}`}>
+                      {log.status}
+                    </span>
+                  </td>
+                  <td style={{ color: 'var(--text-muted)' }}>{log.remarks || '--'}</td>
                 </tr>
               ))}
             </tbody>
@@ -133,19 +173,18 @@ const AdminTeacherAttendance = () => {
 
       {/* Stats Grid */}
       <div className="stats-grid">
-        {stats.map((stat, idx) => (
-          <div className="stat-card" key={idx} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</span>
-            <span style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-main)', lineHeight: 1 }}>{stat.value}</span>
-            <span style={{ fontSize: '12px', color: stat.trendColor, display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <i className={stat.trendIcon}></i> {stat.trend}
-            </span>
-          </div>
-        ))}
+        <div className="stat-card" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Total Faculty</span>
+          <span style={{ fontSize: '28px', fontWeight: 700 }}>{teachers?.length || 0}</span>
+        </div>
+        <div className="stat-card" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Present Today</span>
+          <span style={{ fontSize: '28px', fontWeight: 700, color: '#10b981' }}>{attendanceData?.filter(a => a.status === 'Present').length || 0}</span>
+        </div>
       </div>
 
       {/* View Tabs */}
-      <div className="view-tabs">
+      <div className="view-tabs" style={{ marginBottom: '20px' }}>
         <button className={`tab-btn ${view === 'daily' ? 'active' : ''}`} onClick={() => setView('daily')}>
           <i className="fas fa-calendar-day"></i> Daily Roster
         </button>
@@ -156,31 +195,15 @@ const AdminTeacherAttendance = () => {
 
       {/* Filter Bar */}
       <div className="filter-bar" style={{ justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <div className="select-wrapper">
-            <select>
-              <option>All Departments</option>
-              <option>Computer Science</option>
-              <option>Mathematics</option>
-              <option>Physics</option>
-              <option>English</option>
-            </select>
-            <i className="fas fa-chevron-down"></i>
-          </div>
-          <div className="select-wrapper">
-            <select>
-              <option>All Roles</option>
-              <option>Professor</option>
-              <option>Assistant Professor</option>
-              <option>Lecturer</option>
-            </select>
-            <i className="fas fa-chevron-down"></i>
-          </div>
-        </div>
-        <input type="date" defaultValue="2026-10-24" style={{
-          background: '#f3f4f6', border: '1px solid transparent', padding: '10px 16px',
-          borderRadius: '8px', fontSize: '14px', fontFamily: 'Inter', color: 'var(--text-main)', outline: 'none'
-        }} />
+        <input 
+          type="date" 
+          value={selectedDate} 
+          onChange={(e) => setSelectedDate(e.target.value)}
+          style={{
+            background: '#f3f4f6', border: '1px solid transparent', padding: '10px 16px',
+            borderRadius: '8px', fontSize: '14px', fontFamily: 'Inter', color: 'var(--text-main)', outline: 'none'
+          }} 
+        />
       </div>
 
       {/* Daily Roster */}
@@ -188,46 +211,47 @@ const AdminTeacherAttendance = () => {
         <div className="panel">
           <div className="panel-header">
             <h3>Daily Attendance Roster</h3>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Showing records for Oct 24, 2026</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Showing records for {selectedDate}</span>
           </div>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Teacher Details</th>
-                <th>Department</th>
-                <th>Designation</th>
-                <th>Check-In</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {roster.map((t, idx) => (
-                <tr key={idx}>
-                  <td>
-                    <div className="teacher-info">
-                      <div className="teacher-avatar">{t.initials}</div>
-                      <div className="teacher-details">
-                        <h4>{t.name}</h4>
-                        <p>{t.id}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td><strong>{t.dept}</strong></td>
-                  <td>{t.role}</td>
-                  <td>{t.checkIn}</td>
-                  <td><span className={`status-badge ${t.statusClass}`}>{t.status}</span></td>
-                  <td>
-                    <div className="attendance-actions">
-                      <button className="btn-action btn-present" title="Mark Present">P</button>
-                      <button className="btn-action btn-absent" title="Mark Absent">A</button>
-                      <button className="btn-action" title="Edit Remarks"><i className="fas fa-edit"></i></button>
-                    </div>
-                  </td>
+          {isLoading ? (
+            <div style={{ padding: '40px', textAlign: 'center' }}><i className="fas fa-spinner fa-spin"></i> Loading...</div>
+          ) : (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Teacher Details</th>
+                  <th>Department</th>
+                  <th>Check-In</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {roster.map((t, idx) => (
+                  <tr key={t._id || idx}>
+                    <td>
+                      <div className="teacher-info">
+                        <div className="teacher-details">
+                          <h4>{t.name}</h4>
+                          <p>{t.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td><strong>{t.department}</strong></td>
+                    <td>{t.checkIn}</td>
+                    <td><span className={`status-badge ${t.statusClass}`}>{t.status}</span></td>
+                    <td>
+                      <div className="attendance-actions">
+                        <button className="btn-action btn-present" title="Mark Present" onClick={() => handleMark(t.email, 'Present')}>P</button>
+                        <button className="btn-action btn-absent" title="Mark Absent" onClick={() => handleMark(t.email, 'Absent')}>A</button>
+                        <button className="btn-action" title="Mark Late" onClick={() => handleMark(t.email, 'Late')}>L</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 
@@ -236,7 +260,7 @@ const AdminTeacherAttendance = () => {
         <div className="panel">
           <div className="panel-header">
             <h3>Monthly Attendance Summary</h3>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Staff Performance · October 2026</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Staff Performance · {selectedDate.substring(0, 7)}</span>
           </div>
           <table className="data-table">
             <thead>
@@ -246,28 +270,25 @@ const AdminTeacherAttendance = () => {
                 <th>Present</th>
                 <th>Absent</th>
                 <th>Late</th>
-                <th>Leaves</th>
                 <th>Percentage</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {monthlyData.map((row, idx) => (
-                <tr key={idx}>
+              {monthlyReport?.map((row, idx) => (
+                <tr key={row._id || idx}>
                   <td>
                     <div className="teacher-info">
-                      <div className="teacher-avatar">{row.initials}</div>
                       <div className="teacher-details">
                         <h4>{row.name}</h4>
-                        <p>{row.id}</p>
+                        <p>{row.email}</p>
                       </div>
                     </div>
                   </td>
-                  <td>{row.workingDays}</td>
+                  <td>{row.total}</td>
                   <td style={{ color: '#10b981', fontWeight: 600 }}>{row.present}</td>
                   <td style={{ color: '#ef4444', fontWeight: 600 }}>{row.absent}</td>
                   <td style={{ color: '#f59e0b', fontWeight: 600 }}>{row.late}</td>
-                  <td style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{row.leaves}</td>
                   <td><strong>{row.percentage}</strong></td>
                   <td>
                     <button className="btn-sm" onClick={() => setSelectedTeacher(row)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>

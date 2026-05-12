@@ -1,27 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { adminApi } from '../services/api';
 
 const AdminEvents = () => {
-  const events = [
-    {
-      title: "Annual Athletics Meet",
-      tag: "Sports",
-      date: "Oct 30, 2026",
-      time: "09:00 AM - 05:00 PM",
-      location: "Main Stadium",
-      status: "Upcoming",
-      icon: "fas fa-trophy"
-    },
-    {
-      title: "AI & Ethics Seminar",
-      tag: "Workshop",
-      date: "Nov 05, 2026",
-      time: "10:30 AM - 01:00 PM",
-      location: "Conference Hall B",
-      status: "Upcoming",
-      icon: "fas fa-laptop-code"
-    }
-  ];
+  const { data: events, isLoading } = useQuery({
+    queryKey: ['adminEvents'],
+    queryFn: () => adminApi.getEvents().then(res => res.data),
+  });
 
   return (
     <div className="dashboard-content">
@@ -34,18 +20,22 @@ const AdminEvents = () => {
       </div>
 
       <div className="events-grid">
-        {events.map((event, idx) => (
-          <div className="event-card" key={idx}>
-            <div className="event-image"><i className={event.icon}></i></div>
+        {isLoading ? (
+          <div style={{ padding: '40px', textAlign: 'center', width: '100%' }}><i className="fas fa-spinner fa-spin"></i> Loading...</div>
+        ) : events?.length === 0 ? (
+          <div style={{ padding: '40px', textAlign: 'center', width: '100%' }}>No events found.</div>
+        ) : events?.map((event, idx) => (
+          <div className="event-card" key={event._id || idx}>
+            <div className="event-image"><i className={event.icon || 'fas fa-calendar-alt'}></i></div>
             <div className="event-details">
-              <span className="event-tag">{event.tag}</span>
+              <span className="event-tag">{event.tag || event.type || 'Event'}</span>
               <h3 className="event-title">{event.title}</h3>
-              <div className="event-info"><i className="fas fa-calendar"></i> {event.date}</div>
+              <div className="event-info"><i className="fas fa-calendar"></i> {new Date(event.date).toLocaleDateString()}</div>
               <div className="event-info"><i className="fas fa-clock"></i> {event.time}</div>
               <div className="event-info"><i className="fas fa-map-marker-alt"></i> {event.location}</div>
             </div>
             <div className="event-footer">
-              <span className="status-upcoming">{event.status}</span>
+              <span className="status-upcoming">Upcoming</span>
               <div className="action-btns">
                 <button className="btn-icon"><i className="fas fa-edit"></i></button>
                 <button className="btn-icon"><i className="fas fa-trash-alt"></i></button>
