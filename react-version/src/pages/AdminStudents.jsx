@@ -18,7 +18,7 @@ const AdminStudents = () => {
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['adminStudents', page, search, program, year, status],
-    queryFn: () => adminApi.getStudents({ page, limit: 10, search, program, year, status }).then(res => res.data),
+    queryFn: () => adminApi.getStudents({ page, limit: 7, search, program, year, status }).then(res => res.data),
     keepPreviousData: true,
   });
 
@@ -163,7 +163,7 @@ const AdminStudents = () => {
               </tbody>
             </table>
             <div className="pagination">
-              <span>Showing {(page - 1) * 10 + 1} to {Math.min(page * 10, totalEntries)} of {totalEntries} entries</span>
+              <span>Showing {(page - 1) * 7 + 1} to {Math.min(page * 7, totalEntries)} of {totalEntries} entries</span>
               <div className="page-numbers">
                 <div className={`page-num ${page === 1 ? 'disabled' : ''}`} onClick={() => setPage(p => Math.max(1, p - 1))}>
                   <i className="fas fa-chevron-left"></i>
