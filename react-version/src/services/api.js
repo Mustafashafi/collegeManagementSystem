@@ -27,9 +27,12 @@ export const adminApi = {
   getFees: () => api.get('/api/admin/fees'),
   recordPayment: (id, data) => api.put(`/api/admin/fees/${id}/record`, data),
   getTeacherAttendance: (date) => api.get('/api/admin/teacher-attendance', { params: { date } }),
-  getTeacherAttendanceReport: (month, year) => api.get('/api/admin/teacher-attendance/report', { params: { month, year } }),
+  getTeacherAttendanceReport: (month, year, email) => api.get('/api/admin/teacher-attendance/report', { params: { month, year, email } }),
   markTeacherAttendance: (data) => api.post('/api/admin/teacher-attendance', data),
   getClasses: () => api.get('/api/admin/classes'),
+  getLibrarians: (params) => api.get('/api/admin/librarians', { params }),
+  addLibrarian: (data) => api.post('/api/admin/librarians', data),
+  deleteLibrarian: (id) => api.delete(`/api/admin/librarians/${id}`),
   getEvents: () => api.get('/api/events'),
   getEventById: (id) => api.get(`/api/events/${id}`),
   getFilters: () => api.get('/api/admin/filters'),
@@ -50,6 +53,18 @@ export const applicationApi = {
 // Leads API
 export const leadsApi = {
   getAll: () => api.get('/api/leads'),
+};
+
+// Library API
+export const libraryApi = {
+  getStats: () => api.get('/api/library/stats'),
+  getBooks: (params) => api.get('/api/library/books', { params }),
+  addBook: (data) => api.post('/api/library/books', data),
+  getRequests: () => api.get('/api/library/requests'),
+  updateRequest: (id, data) => api.put(`/api/library/requests/${id}`, data),
+  getRecords: () => api.get('/api/library/records'),
+  requestBook: (data) => api.post('/api/library/request', data),
+  getMyRequests: (userId) => api.get(`/api/library/my-requests/${userId}`),
 };
 
 export default api;

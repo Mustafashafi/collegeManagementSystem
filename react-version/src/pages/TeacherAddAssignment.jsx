@@ -9,6 +9,7 @@ const TeacherAddAssignment = () => {
   const [formData, setFormData] = useState({
     title: '',
     program: '',
+    year: '',
     dueDate: '',
     subject: '',
     description: ''
@@ -31,6 +32,7 @@ const TeacherAddAssignment = () => {
             setFormData(prev => ({ 
               ...prev, 
               program: data.fullSchedule[0].program,
+              year: data.fullSchedule[0].year,
               subject: data.fullSchedule[0].subject
             }));
           }
@@ -48,6 +50,7 @@ const TeacherAddAssignment = () => {
       setFormData({
         ...formData,
         program: selectedClass.program,
+        year: selectedClass.year,
         subject: selectedClass.subject
       });
     }
@@ -64,6 +67,7 @@ const TeacherAddAssignment = () => {
     const formDataObj = new FormData();
     formDataObj.append('title', formData.title);
     formDataObj.append('program', formData.program);
+    formDataObj.append('year', formData.year);
     formDataObj.append('dueDate', formData.dueDate);
     formDataObj.append('subject', formData.subject);
     formDataObj.append('description', formData.description);

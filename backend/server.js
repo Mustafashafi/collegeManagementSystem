@@ -47,6 +47,7 @@ app.use('/api/teachers', require('./routes/teachers'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/results', require('./routes/results'));
+app.use('/api/library', require('./routes/library'));
 
 // 404 Logger
 app.use((req, res, next) => {

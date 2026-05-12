@@ -58,10 +58,12 @@ router.post('/assignments', upload.single('assignmentFile'), async (req, res) =>
   console.log(`Title: ${req.body.title} | File: ${req.file ? req.file.originalname : 'NONE'}`);
   
   try {
-    const { title, program, dueDate, subject, description, teacherName } = req.body;
+    const { title, program, year, dueDate, subject, description, teacherName } = req.body;
     
-    // Find all students in this program
-    const students = await Student.find({ program });
+    // Find all students in this program and year
+    const query = { program };
+    if (year) query.year = year;
+    const students = await Student.find(query);
     
     if (students.length === 0) {
       return res.status(404).json({ msg: 'No students found in this program' });
@@ -73,6 +75,8 @@ router.post('/assignments', upload.single('assignmentFile'), async (req, res) =>
       studentEmail: student.email,
       title,
       subject,
+      program,
+      year: student.year, // Use student's year if specific record
       dueDate,
       teacher: teacherName,
       description,

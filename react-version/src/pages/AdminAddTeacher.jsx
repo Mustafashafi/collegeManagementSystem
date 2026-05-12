@@ -1,15 +1,27 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { adminApi } from '../services/api';
 import toast from 'react-hot-toast';
 
 const AdminAddTeacher = () => {
   const navigate = useNavigate();
+  const { data: filters } = useQuery({
+    queryKey: ['adminFilters'],
+    queryFn: () => adminApi.getFilters().then(res => res.data),
+  });
+
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', teacherId: '',
-    department: 'Computer Science', designation: 'Professor'
+    department: '', designation: 'Professor'
   });
+
+  // Set default department once filters are loaded
+  React.useEffect(() => {
+    if (filters?.departments?.length > 0 && !formData.department) {
+      setFormData(prev => ({ ...prev, department: filters.departments[0] }));
+    }
+  }, [filters]);
 
   const mutation = useMutation({
     mutationFn: (data) => adminApi.addTeacher(data),
@@ -52,10 +64,10 @@ const AdminAddTeacher = () => {
           <div className="form-group">
             <label>Department</label>
             <select name="department" className="form-control" value={formData.department} onChange={handleChange}>
-              <option>Computer Science</option>
-              <option>Physics</option>
-              <option>Mathematics</option>
-              <option>English</option>
+              {filters?.departments?.map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+              {!filters?.departments?.length && <option value="">Loading departments...</option>}
             </select>
           </div>
           <div className="form-group">

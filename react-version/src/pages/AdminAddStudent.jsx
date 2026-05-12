@@ -1,16 +1,28 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { adminApi } from '../services/api';
 import toast from 'react-hot-toast';
 
 const AdminAddStudent = () => {
   const navigate = useNavigate();
+  const { data: filters } = useQuery({
+    queryKey: ['adminFilters'],
+    queryFn: () => adminApi.getFilters().then(res => res.data),
+  });
+
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', dob: '', gender: 'Male',
-    email: '', phone: '', studentId: '', program: 'B.Sc Computer Science',
+    email: '', phone: '', studentId: '', program: '',
     year: '1st Year'
   });
+
+  // Set default program once filters are loaded
+  React.useEffect(() => {
+    if (filters?.programs?.length > 0 && !formData.program) {
+      setFormData(prev => ({ ...prev, program: filters.programs[0] }));
+    }
+  }, [filters]);
 
   const mutation = useMutation({
     mutationFn: (data) => adminApi.addStudent(data),
@@ -79,10 +91,10 @@ const AdminAddStudent = () => {
           <div className="form-group">
             <label>Course / Program</label>
             <select name="program" className="form-control" value={formData.program} onChange={handleChange}>
-              <option>B.Sc Computer Science</option>
-              <option>B.A English</option>
-              <option>B.B.A Management</option>
-              <option>M.Sc Physics</option>
+              {filters?.programs?.map(p => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+              {!filters?.programs?.length && <option value="">Loading programs...</option>}
             </select>
           </div>
           <div className="form-group">

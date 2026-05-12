@@ -18,6 +18,7 @@ const AdminDashboard = () => {
     { label: "Total Teachers", value: statsData?.totalTeachers || 0, icon: "fas fa-chalkboard-teacher", bgColor: "#ecfdf5", iconColor: "#10b981" },
     { label: "New Inquiries (This Month)", value: statsData?.newInquiries || 0, icon: "fas fa-user-plus", bgColor: "#f5f3ff", iconColor: "#8b5cf6" },
     { label: "Fees Collected", value: `$${(statsData?.feesCollected / 1000).toFixed(1)}k`, icon: "fas fa-file-invoice-dollar", bgColor: "#fff7ed", iconColor: "#f97316" },
+    { label: "Books Issued", value: statsData?.library?.currentlyIssued || 0, icon: "fas fa-book-reader", bgColor: "#fff1f2", iconColor: "#e11d48" },
   ];
 
   const recentAdmissions = appsLoading ? [] : (applicationsData?.slice(0, 5).map(app => ({

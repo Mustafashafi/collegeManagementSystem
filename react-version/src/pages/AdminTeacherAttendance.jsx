@@ -141,7 +141,7 @@ const AdminTeacherAttendance = () => {
                 <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>No records found for this month.</td></tr>
               ) : history.map((log, idx) => (
                 <tr key={idx}>
-                  <td><strong>{new Date(log.date).toLocaleDateString()}</strong></td>
+                  <td><strong>{new Date(log.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</strong></td>
                   <td>{log.checkIn}</td>
                   <td>
                     <span className={`status-badge ${log.status === 'Present' ? 'status-present' : log.status === 'Absent' ? 'status-absent' : 'status-late'}`}>

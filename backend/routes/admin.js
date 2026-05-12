@@ -5,6 +5,8 @@ const Teacher = require('../models/Teacher');
 const Fee = require('../models/Fee');
 const Application = require('../models/Application');
 const User = require('../models/User');
+const Book = require('../models/Book');
+const BookRequest = require('../models/BookRequest');
 
 // @route   GET /api/admin/stats
 // @desc    Get dashboard statistics
@@ -24,11 +26,21 @@ router.get('/stats', async (req, res) => {
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
 
+    // Library Stats
+    const totalBooks = await Book.countDocuments();
+    const currentlyIssued = await BookRequest.countDocuments({ status: 'Issued' });
+    const pendingRequests = await BookRequest.countDocuments({ status: 'Pending' });
+
     res.json({
       totalStudents,
       totalTeachers,
       newInquiries,
-      feesCollected: feesCollected.length > 0 ? feesCollected[0].total : 0
+      feesCollected: feesCollected.length > 0 ? feesCollected[0].total : 0,
+      library: {
+        totalBooks,
+        currentlyIssued,
+        pendingRequests
+      }
     });
   } catch (err) {
     res.status(500).json({ success: false, msg: err.message });
@@ -154,6 +166,31 @@ router.post('/students', async (req, res) => {
       role: 'student'
     });
     await newUser.save();
+
+    // 3. Auto-assign existing assignments for this class
+    const classAssignments = await Assignment.aggregate([
+      { $match: { program: newStudent.program, year: newStudent.year } },
+      { $group: {
+          _id: { title: "$title", subject: "$subject", teacher: "$teacher" },
+          details: { $first: "$$ROOT" }
+      }}
+    ]);
+
+    if (classAssignments.length > 0) {
+      const studentAssignments = classAssignments.map(item => ({
+        studentEmail: newStudent.email,
+        title: item._id.title,
+        subject: item._id.subject,
+        teacher: item._id.teacher,
+        program: newStudent.program,
+        year: newStudent.year,
+        dueDate: item.details.dueDate,
+        description: item.details.description,
+        assignmentFile: item.details.assignmentFile,
+        status: 'Pending'
+      }));
+      await Assignment.insertMany(studentAssignments);
+    }
 
     res.json({ success: true, student: newStudent });
   } catch (err) {
@@ -358,6 +395,49 @@ router.get('/filters', async (req, res) => {
     const programs = await Student.distinct('program');
     const departments = await Teacher.distinct('department');
     res.json({ programs, departments });
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
+// @route   GET /api/admin/librarians
+// @desc    Get all librarians
+router.get('/librarians', async (req, res) => {
+  try {
+    const librarians = await User.find({ role: 'librarian' }).select('-password').sort({ createdAt: -1 });
+    res.json(librarians);
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
+// @route   POST /api/admin/librarians
+// @desc    Add a new librarian
+router.post('/librarians', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const existing = await User.findOne({ email });
+    if (existing) return res.status(400).json({ msg: 'User already exists with this email' });
+
+    const newUser = new User({
+      name,
+      email,
+      password: password || 'lib123', // default password
+      role: 'librarian'
+    });
+    await newUser.save();
+    res.json({ success: true, librarian: newUser });
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
+// @route   DELETE /api/admin/librarians/:id
+// @desc    Delete a librarian
+router.delete('/librarians/:id', async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ success: true, msg: 'Librarian deleted' });
   } catch (err) {
     res.status(500).json({ success: false, msg: err.message });
   }

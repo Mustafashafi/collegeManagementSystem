@@ -4,6 +4,8 @@ const AssignmentSchema = new mongoose.Schema({
   studentEmail: { type: String, required: true },
   title: { type: String, required: true },
   subject: { type: String, required: true },
+  program: { type: String }, // Target program
+  year: { type: String },    // Target year
   dueDate: { type: Date, required: true },
   teacher: { type: String, required: true },
   status: { type: String, enum: ['Pending', 'Submitted', 'Graded'], default: 'Pending' },
