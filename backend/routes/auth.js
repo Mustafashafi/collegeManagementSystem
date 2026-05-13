@@ -132,4 +132,41 @@ router.post('/register', async (req, res) => {
   }
 });
 
+const Role = require('../models/Role');
+
+// @route   GET /api/auth/permissions
+// @desc    Get permissions for a specific role
+router.get('/permissions', async (req, res) => {
+  try {
+    const { role } = req.query;
+    if (!role) return res.status(400).json({ success: false, msg: 'Role is required' });
+
+    // Find role by title (case insensitive or exact match depending on how you store it)
+    // In seed_roles.js we used exact titles like "Teacher", "Student"
+    // The request might be lowercase 'admin', 'teacher', etc.
+    
+    let roleDoc = await Role.findOne({ title: new RegExp('^' + role + '$', 'i') });
+    
+    if (!roleDoc) {
+      // If not found, maybe it's 'admin' which often has full access
+      if (role.toLowerCase() === 'admin') {
+        return res.json({
+          success: true,
+          permissions: [
+            { name: "Full System Access", enabled: true }
+          ]
+        });
+      }
+      return res.status(404).json({ success: false, msg: 'Role permissions not found' });
+    }
+
+    res.json({
+      success: true,
+      permissions: roleDoc.permissions
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
 module.exports = router;

@@ -23,10 +23,27 @@ const AdminAccessControl = () => {
     }
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id) => adminApi.deleteRole(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['adminRoles']);
+      toast.success('Role deleted successfully!');
+    },
+    onError: () => {
+      toast.error('Failed to delete role');
+    }
+  });
+
   const handleToggle = (role, permIdx) => {
     const updatedPermissions = [...role.permissions];
     updatedPermissions[permIdx].enabled = !updatedPermissions[permIdx].enabled;
     mutation.mutate({ id: role._id, permissions: updatedPermissions });
+  };
+
+  const handleDeleteRole = (id) => {
+    if (window.confirm('Are you sure you want to delete this role? This cannot be undone.')) {
+      deleteMutation.mutate(id);
+    }
   };
 
   if (isLoading) {
@@ -51,7 +68,17 @@ const AdminAccessControl = () => {
         {roles?.map((role) => (
           <div className="role-card" key={role._id}>
             <div className="role-header">
-              <div className="role-title"><i className={role.icon}></i> {role.title}</div>
+              <div className="role-title">
+                <i className={role.icon}></i> {role.title}
+                <button 
+                  className="btn-delete-role" 
+                  onClick={() => handleDeleteRole(role._id)}
+                  style={{ marginLeft: '12px', border: 'none', background: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px' }}
+                  title="Delete Role"
+                >
+                  <i className="fas fa-trash"></i>
+                </button>
+              </div>
               <span className="role-badge">{role.count}</span>
             </div>
             <div className="permission-list">

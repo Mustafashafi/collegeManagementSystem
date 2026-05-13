@@ -47,11 +47,13 @@ export const adminApi = {
   getRoles: () => api.get('/api/admin/roles'),
   updateRole: (id, data) => api.put(`/api/admin/roles/${id}`, data),
   addRole: (data) => api.post('/api/admin/roles', data),
+  deleteRole: (id) => api.delete(`/api/admin/roles/${id}`),
 };
 
 // Auth API
 export const authApi = {
   login: (credentials) => api.post('/api/auth/login', credentials),
+  getPermissions: (role) => api.get('/api/auth/permissions', { params: { role } }),
 };
 
 // Application API

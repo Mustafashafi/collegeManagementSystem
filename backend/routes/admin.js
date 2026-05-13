@@ -897,4 +897,16 @@ router.post('/roles', async (req, res) => {
   }
 });
 
+// @route   DELETE /api/admin/roles/:id
+// @desc    Delete a role
+router.delete('/roles/:id', async (req, res) => {
+  try {
+    const role = await Role.findByIdAndDelete(req.params.id);
+    if (!role) return res.status(404).json({ success: false, msg: 'Role not found' });
+    res.json({ success: true, msg: 'Role deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
 module.exports = router;
