@@ -44,6 +44,9 @@ export const adminApi = {
   deleteProgram: (id) => api.delete(`/api/admin/programs/${id}`),
   getEventById: (id) => api.get(`/api/events/${id}`),
   getFilters: () => api.get('/api/admin/filters'),
+  getRoles: () => api.get('/api/admin/roles'),
+  updateRole: (id, data) => api.put(`/api/admin/roles/${id}`, data),
+  addRole: (data) => api.post('/api/admin/roles', data),
 };
 
 // Auth API

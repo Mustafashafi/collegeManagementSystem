@@ -5,14 +5,9 @@ const Topbar = ({ user }) => {
 
   return (
     <header className="topbar">
-      {!isStudentPortal ? (
-        <div className="search-bar">
-          <i className="fas fa-search"></i>
-          <input type="text" placeholder="Search students, staff, or leads..." />
-        </div>
-      ) : (
-        <div></div>
-      )}
+      <div className="topbar-left">
+        {/* Search bar removed as per user request */}
+      </div>
       <div className="topbar-right">
         <button className="icon-btn">
           <i className="fas fa-bell"></i>

@@ -803,4 +803,98 @@ router.delete('/timetable/:id', async (req, res) => {
   }
 });
 
+const Role = require('../models/Role');
+
+// @route   GET /api/admin/roles
+// @desc    Get all roles with user counts
+router.get('/roles', async (req, res) => {
+  try {
+    let roles = await Role.find().sort({ createdAt: 1 });
+    
+    // Initialize defaults if empty
+    if (roles.length === 0) {
+      const defaults = [
+        {
+          title: "Teacher",
+          icon: "fas fa-chalkboard-teacher",
+          permissions: [
+            { name: "Mark Attendance", enabled: true },
+            { name: "Upload Results", enabled: true },
+            { name: "Manage Assignments", enabled: true },
+            { name: "Access Finance", enabled: false },
+          ]
+        },
+        {
+          title: "Librarian",
+          icon: "fas fa-user-tie",
+          permissions: [
+            { name: "Manage Books", enabled: true },
+            { name: "Issue Books", enabled: true },
+            { name: "View Student Profile", enabled: true },
+            { name: "Delete Records", enabled: false },
+          ]
+        },
+        {
+          title: "Admissions Officer",
+          icon: "fas fa-user-check",
+          permissions: [
+            { name: "Manage Leads", enabled: true },
+            { name: "Approve Applications", enabled: true },
+            { name: "Marketing Campaigns", enabled: true },
+            { name: "Edit Fee Structure", enabled: false },
+          ]
+        }
+      ];
+      await Role.insertMany(defaults);
+      roles = await Role.find().sort({ createdAt: 1 });
+    }
+
+    // Map user counts
+    const result = await Promise.all(roles.map(async (r) => {
+      let count = 0;
+      if (r.title === 'Teacher') count = await Teacher.countDocuments();
+      else if (r.title === 'Librarian') count = await User.countDocuments({ role: 'librarian' });
+      else if (r.title === 'Admissions Officer') count = await User.countDocuments({ role: 'crm' });
+      else count = await User.countDocuments({ role: r.title.toLowerCase() });
+
+      return {
+        ...r.toObject(),
+        count: `${count} Users`
+      };
+    }));
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
+// @route   PUT /api/admin/roles/:id
+// @desc    Update role permissions
+router.put('/roles/:id', async (req, res) => {
+  try {
+    const { permissions } = req.body;
+    const role = await Role.findByIdAndUpdate(req.params.id, { permissions }, { new: true });
+    res.json({ success: true, role });
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
+// @route   POST /api/admin/roles
+// @desc    Add a new role
+router.post('/roles', async (req, res) => {
+  try {
+    const { title, icon, permissions } = req.body;
+    const existing = await Role.findOne({ title });
+    if (existing) return res.status(400).json({ msg: 'Role already exists' });
+
+    const newRole = new Role({ title, icon, permissions });
+    await newRole.save();
+    res.json({ success: true, role: newRole });
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
 module.exports = router;

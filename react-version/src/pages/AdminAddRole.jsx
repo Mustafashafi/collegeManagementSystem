@@ -1,19 +1,53 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { adminApi } from '../services/api';
+import toast from 'react-hot-toast';
 
 const AdminAddRole = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [roleName, setRoleName] = useState('');
+  const [description, setDescription] = useState('');
+  const [permissions, setPermissions] = useState([
+    { name: "Student Management", enabled: true },
+    { name: "Fee Records", enabled: false },
+    { name: "Timetable Management", enabled: false },
+    { name: "Library Access", enabled: true },
+    { name: "Attendance Tracking", enabled: false },
+    { name: "Results & Grading", enabled: false },
+  ]);
 
-  const permissions = [
-    { title: "Student Management", subtitle: "View, Add, Edit student records", access: "Full Access", checked: true },
-    { title: "Fee Records", subtitle: "Collect fees, Generate invoices", access: "Full Access", checked: false },
-    { title: "Timetable Management", subtitle: "Modify schedules", access: "Full Access", checked: false },
-    { title: "Library Access", subtitle: "Manage book requests", access: "View Only", checked: true },
-  ];
+  const mutation = useMutation({
+    mutationFn: (data) => adminApi.addRole(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['adminRoles']);
+      toast.success('New role created successfully!');
+      navigate('/admin/access-control');
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.msg || 'Failed to create role');
+    }
+  });
+
+  const handleToggle = (idx) => {
+    const updated = [...permissions];
+    updated[idx].enabled = !updated[idx].enabled;
+    setPermissions(updated);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!roleName) return toast.error('Role name is required');
+    mutation.mutate({
+      title: roleName,
+      icon: "fas fa-user-shield", // Default icon for new roles
+      permissions: permissions
+    });
+  };
 
   return (
     <div className="dashboard-content">
-      {/* Page Header */}
       <div className="page-header" style={{ marginBottom: '32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <button className="btn-icon" onClick={() => navigate('/admin/access-control')}>
@@ -23,14 +57,17 @@ const AdminAddRole = () => {
         </div>
       </div>
 
-      <div className="settings-card" style={{ maxWidth: '800px', margin: '0 0' }}>
+      <form onSubmit={handleSubmit} className="settings-card" style={{ maxWidth: '800px', margin: '0 0' }}>
         <div className="form-group" style={{ marginBottom: '30px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: '#111827' }}>Role Name</label>
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: '#111827' }}>Role Name *</label>
           <input 
             type="text" 
             className="form-control" 
+            value={roleName}
+            onChange={(e) => setRoleName(e.target.value)}
             placeholder="e.g. Accounts Officer, Department Head" 
             style={{ padding: '14px', borderRadius: '10px' }}
+            required
           />
         </div>
 
@@ -38,6 +75,8 @@ const AdminAddRole = () => {
           <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: '#111827' }}>Role Description</label>
           <textarea 
             className="form-control" 
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             placeholder="Briefly describe the purpose of this role..." 
             style={{ padding: '14px', borderRadius: '10px', minHeight: '100px', resize: 'vertical' }}
           ></textarea>
@@ -53,15 +92,19 @@ const AdminAddRole = () => {
                 borderBottom: idx === permissions.length - 1 ? 'none' : '1px solid #f1f5f9' 
               }}>
                 <div className="toggle-info">
-                  <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '4px' }}>{perm.title}</h4>
-                  <p style={{ fontSize: '12px', color: '#9ca3af' }}>{perm.subtitle}</p>
+                  <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '4px' }}>{perm.name}</h4>
+                  <p style={{ fontSize: '12px', color: '#9ca3af' }}>Enable or disable access to this module</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <label className="switch">
-                    <input type="checkbox" defaultChecked={perm.checked} />
+                    <input 
+                      type="checkbox" 
+                      checked={perm.enabled} 
+                      onChange={() => handleToggle(idx)}
+                    />
                     <span className="slider"></span>
                   </label>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#4b5563', minWidth: '80px' }}>{perm.access}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#4b5563', minWidth: '80px' }}>{perm.enabled ? 'Full Access' : 'No Access'}</span>
                 </div>
               </div>
             ))}
@@ -69,10 +112,17 @@ const AdminAddRole = () => {
         </div>
 
         <div className="form-footer" style={{ marginTop: '40px', paddingTop: '30px' }}>
-          <button className="btn-outline" onClick={() => navigate('/admin/access-control')} style={{ padding: '12px 24px', borderRadius: '10px' }}>Cancel</button>
-          <button className="btn-primary" style={{ background: '#111827', color: '#fff', padding: '12px 24px', borderRadius: '10px', border: 'none' }}>Create Role & Save</button>
+          <button type="button" className="btn-outline" onClick={() => navigate('/admin/access-control')} style={{ padding: '12px 24px', borderRadius: '10px' }}>Cancel</button>
+          <button 
+            type="submit" 
+            className="btn-primary" 
+            style={{ background: '#111827', color: '#fff', padding: '12px 24px', borderRadius: '10px', border: 'none' }}
+            disabled={mutation.isLoading}
+          >
+            {mutation.isLoading ? 'Saving...' : 'Create Role & Save'}
+          </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 };
