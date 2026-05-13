@@ -11,12 +11,36 @@ router.get('/dashboard/:email', async (req, res) => {
     const teacher = await Teacher.findOne({ email: req.params.email });
     if (!teacher) return res.status(404).json({ msg: 'Teacher not found' });
 
-    const totalStudents = await Student.countDocuments({
-      $or: [
-        { program: { $in: teacher.assignedClasses } },
-        { secondarySubjects: { $in: teacher.assignedClasses } }
-      ]
-    });
+    // Build a smarter query for students
+    // We want students who are in the programs/years assigned to the teacher
+    // OR students who have the teacher's subjects as secondary subjects
+    const studentQueries = [];
+
+    // 1. Core Program Matching
+    if (teacher.assignedClasses && teacher.assignedClasses.length > 0) {
+      teacher.assignedClasses.forEach(classLabel => {
+        // Handle labels like "BBA (Business Administration) (1st Year)"
+        // Or "B.Eng (Mechanical Engineering)"
+        const match = classLabel.match(/(.+)\s\((.+Year)\)$/);
+        if (match) {
+          const [_, program, year] = match;
+          studentQueries.push({ program, year });
+        } else {
+          // Fallback to program-only matching
+          studentQueries.push({ program: classLabel });
+        }
+      });
+    }
+
+    // 2. Secondary Subject Matching
+    if (teacher.subjects && teacher.subjects.length > 0) {
+      studentQueries.push({ secondarySubjects: { $in: teacher.subjects } });
+    }
+
+    let totalStudents = 0;
+    if (studentQueries.length > 0) {
+      totalStudents = await Student.countDocuments({ $or: studentQueries });
+    }
 
     const fullSchedule = await Timetable.find({ teacher: teacher.name }).sort({ day: 1, time: 1 });
     const currentDay = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date());
