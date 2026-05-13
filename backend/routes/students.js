@@ -122,10 +122,13 @@ router.get('/results/:email', async (req, res) => {
 const Timetable = require('../models/Timetable');
 
 // @route   GET /api/students/timetable/:program
-// @desc    Get timetable by program
+// @desc    Get timetable by program and year
 router.get('/timetable/:program', async (req, res) => {
   try {
-    const timetable = await Timetable.find({ program: req.params.program });
+    const { year } = req.query;
+    const query = { program: req.params.program };
+    if (year) query.year = year;
+    const timetable = await Timetable.find(query);
     res.json(timetable);
   } catch (err) {
     res.status(500).json({ success: false, msg: err.message });

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../services/api';
+import toast from 'react-hot-toast';
 
 const AdminTeachers = () => {
+  const queryClient = useQueryClient();
   const [deptFilter, setDeptFilter] = useState('');
   const [search, setSearch] = useState('');
 
@@ -16,6 +18,23 @@ const AdminTeachers = () => {
     queryKey: ['adminTeachers', deptFilter, search],
     queryFn: () => adminApi.getTeachers({ department: deptFilter, search }).then(res => res.data),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => adminApi.deleteTeacher(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['adminTeachers']);
+      toast.success('Teacher and all associated data deleted successfully!');
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.msg || 'Failed to delete teacher');
+    }
+  });
+
+  const handleDelete = (id, name) => {
+    if (window.confirm(`Are you sure you want to completely delete ${name}? This will remove their portal access, timetable, and all records permanently.`)) {
+      deleteMutation.mutate(id);
+    }
+  };
 
   const getInitials = (name) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -86,7 +105,7 @@ const AdminTeachers = () => {
                         <div className="teacher-avatar">{getInitials(teacher.name)}</div>
                         <div className="teacher-details">
                           <h4>{teacher.name}</h4>
-                          <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>ID: {teacher.teacherId || 'N/A'}</p>
+                          <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>ID: {teacher.employeeId || 'N/A'}</p>
                         </div>
                       </div>
                     </td>
@@ -96,7 +115,14 @@ const AdminTeachers = () => {
                     <td>
                       <div className="action-btns">
                         <button className="btn-icon" title="Edit Record"><i className="fas fa-edit"></i></button>
-                        <button className="btn-icon" title="Delete"><i className="fas fa-trash-alt"></i></button>
+                        <button 
+                          className="btn-icon" 
+                          title="Delete" 
+                          onClick={() => handleDelete(teacher._id, teacher.name)}
+                          disabled={deleteMutation.isLoading}
+                        >
+                          <i className="fas fa-trash-alt"></i>
+                        </button>
                       </div>
                     </td>
                   </tr>

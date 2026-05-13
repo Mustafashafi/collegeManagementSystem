@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { adminApi } from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -7,10 +7,16 @@ import toast from 'react-hot-toast';
 const AdminAddClass = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  
+  const { data: teachersData } = useQuery({
+    queryKey: ['adminTeachers'],
+    queryFn: () => adminApi.getTeachers().then(res => res.data),
+  });
+
   const [formData, setFormData] = useState({
     name: '',
     year: '1st Year',
-    subjects: [{ name: '', teacher: '', teacherEmail: '' }]
+    subjects: [{ name: '', teacher: '', teacherEmail: '', isNewTeacher: false, teacherPhone: '', teacherId: '' }]
   });
 
   const addProgramMutation = useMutation({
@@ -28,13 +34,28 @@ const AdminAddClass = () => {
   const handleAddSubject = () => {
     setFormData({
       ...formData,
-      subjects: [...formData.subjects, { name: '', teacher: '' }]
+      subjects: [...formData.subjects, { name: '', teacher: '', teacherEmail: '', isNewTeacher: false, teacherPhone: '', teacherId: '' }]
     });
   };
 
   const handleSubjectChange = (index, field, value) => {
     const newSubjects = [...formData.subjects];
-    newSubjects[index][field] = value;
+    
+    if (field === 'teacherSelect') {
+      if (value === 'NEW') {
+        newSubjects[index].isNewTeacher = true;
+        newSubjects[index].teacher = '';
+        newSubjects[index].teacherEmail = '';
+      } else {
+        const selectedTeacher = teachersData?.find(t => t.email === value);
+        newSubjects[index].isNewTeacher = false;
+        newSubjects[index].teacher = selectedTeacher?.name || '';
+        newSubjects[index].teacherEmail = value;
+      }
+    } else {
+      newSubjects[index][field] = value;
+    }
+    
     setFormData({ ...formData, subjects: newSubjects });
   };
 
@@ -47,6 +68,9 @@ const AdminAddClass = () => {
     e.preventDefault();
     if (formData.subjects.some(s => !s.name)) {
       return toast.error('Please fill in all subject names');
+    }
+    if (formData.subjects.some(s => s.isNewTeacher && (!s.teacher || !s.teacherEmail || !s.teacherPhone))) {
+      return toast.error('Please fill in all details for the new teacher');
     }
     addProgramMutation.mutate(formData);
   };
@@ -96,45 +120,85 @@ const AdminAddClass = () => {
             </div>
 
             {formData.subjects.map((subject, idx) => (
-              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.2fr 40px', gap: '12px', marginBottom: '16px', alignItems: 'end', padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
-                <div className="form-group">
-                  <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Subject Name</label>
-                  <input 
-                    type="text" 
-                    required
-                    className="form-control" 
-                    placeholder="e.g. Data Structures" 
-                    value={subject.name}
-                    onChange={(e) => handleSubjectChange(idx, 'name', e.target.value)}
-                  />
+              <div key={idx} style={{ marginBottom: '20px', padding: '20px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--primary)', fontSize: '14px' }}>Subject #{idx + 1}</span>
+                  <button 
+                    type="button" 
+                    onClick={() => handleRemoveSubject(idx)}
+                    style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}
+                  >
+                    <i className="fas fa-times"></i> Remove
+                  </button>
                 </div>
-                <div className="form-group">
-                  <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Teacher Name</label>
-                  <input 
-                    type="text" 
-                    className="form-control" 
-                    placeholder="e.g. Prof. Smith" 
-                    value={subject.teacher}
-                    onChange={(e) => handleSubjectChange(idx, 'teacher', e.target.value)}
-                  />
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                  <div className="form-group">
+                    <label style={{ fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Subject Name</label>
+                    <input 
+                      type="text" 
+                      required
+                      className="form-control" 
+                      placeholder="e.g. Data Structures" 
+                      value={subject.name}
+                      onChange={(e) => handleSubjectChange(idx, 'name', e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label style={{ fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Assign Teacher</label>
+                    <select 
+                      className="form-control"
+                      value={subject.isNewTeacher ? 'NEW' : subject.teacherEmail}
+                      onChange={(e) => handleSubjectChange(idx, 'teacherSelect', e.target.value)}
+                      required
+                    >
+                      <option value="">Select Existing Teacher</option>
+                      {teachersData?.map(t => (
+                        <option key={t.email} value={t.email}>{t.name} ({t.department})</option>
+                      ))}
+                      <option value="NEW" style={{ fontWeight: 'bold', color: 'var(--primary)' }}>+ Add New Teacher</option>
+                    </select>
+                  </div>
+
+                  {subject.isNewTeacher && (
+                    <div style={{ gridColumn: 'span 2', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', padding: '15px', background: '#fff', borderRadius: '8px', border: '1px dashed var(--primary)' }}>
+                      <div className="form-group">
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--primary)' }}>Full Name</label>
+                        <input 
+                          type="text" 
+                          className="form-control" 
+                          placeholder="Teacher Name"
+                          value={subject.teacher}
+                          onChange={(e) => handleSubjectChange(idx, 'teacher', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--primary)' }}>Email (Login ID)</label>
+                        <input 
+                          type="email" 
+                          className="form-control" 
+                          placeholder="email@college.edu"
+                          value={subject.teacherEmail}
+                          onChange={(e) => handleSubjectChange(idx, 'teacherEmail', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--primary)' }}>Phone (Password)</label>
+                        <input 
+                          type="text" 
+                          className="form-control" 
+                          placeholder="Phone number"
+                          value={subject.teacherPhone}
+                          onChange={(e) => handleSubjectChange(idx, 'teacherPhone', e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="form-group">
-                  <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Teacher Email (For Portal)</label>
-                  <input 
-                    type="email" 
-                    className="form-control" 
-                    placeholder="teacher@college.edu" 
-                    value={subject.teacherEmail}
-                    onChange={(e) => handleSubjectChange(idx, 'teacherEmail', e.target.value)}
-                  />
-                </div>
-                <button 
-                  type="button" 
-                  onClick={() => handleRemoveSubject(idx)}
-                  style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <i className="fas fa-trash-alt"></i>
-                </button>
               </div>
             ))}
           </div>

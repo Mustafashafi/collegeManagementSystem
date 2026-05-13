@@ -16,7 +16,7 @@ const StudentTimetable = () => {
         setProfile(profileData);
 
         if (profileData && profileData.program) {
-          const timetableRes = await fetch(`${API_BASE_URL}/api/students/timetable/${profileData.program}`);
+          const timetableRes = await fetch(`${API_BASE_URL}/api/students/timetable/${encodeURIComponent(profileData.program)}?year=${encodeURIComponent(profileData.year || '')}`);
           const timetableData = await timetableRes.json();
           setTimetable(timetableData);
         }
