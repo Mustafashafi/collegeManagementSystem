@@ -11,10 +11,18 @@ const AdminFees = () => {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMode, setPaymentMode] = useState('Cash');
+  
+  const [statusFilter, setStatusFilter] = useState('All Status');
+  const [programFilter, setProgramFilter] = useState('All Programs');
 
-  const { data: fees, isLoading, isError } = useQuery({
-    queryKey: ['adminFees'],
-    queryFn: () => adminApi.getFees().then(res => res.data),
+  const { data: fees, isLoading, isError, refetch } = useQuery({
+    queryKey: ['adminFees', statusFilter, programFilter],
+    queryFn: () => adminApi.getFees({ status: statusFilter, program: programFilter }).then(res => res.data),
+  });
+
+  const { data: programs } = useQuery({
+    queryKey: ['adminPrograms'],
+    queryFn: () => adminApi.getPrograms().then(res => res.data),
   });
 
   const recordMutation = useMutation({
@@ -30,6 +38,23 @@ const AdminFees = () => {
       toast.error('Failed to record payment.');
     }
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => adminApi.deleteFee(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['adminFees']);
+      toast.success('Invoice deleted successfully!');
+    },
+    onError: () => {
+      toast.error('Failed to delete invoice.');
+    }
+  });
+
+  const handleDelete = (id) => {
+    if (window.confirm('Are you sure you want to delete this invoice?')) {
+      deleteMutation.mutate(id);
+    }
+  };
 
   const totalExpected = fees?.reduce((acc, f) => acc + f.amount, 0) || 0;
   const totalCollected = fees?.reduce((acc, f) => acc + (f.amountPaid || 0), 0) || 0;
@@ -59,6 +84,10 @@ const AdminFees = () => {
     setShowRecord(true);
   };
 
+  const handleFilter = () => {
+    refetch();
+  };
+
   return (
     <div className="dashboard-content">
       <div className="page-header">
@@ -84,7 +113,12 @@ const AdminFees = () => {
       <div className="filter-bar" style={{ flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: '160px' }}>
           <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Payment Status</label>
-          <select className="form-control" style={{ padding: '9px', fontSize: '13px' }}>
+          <select 
+            className="form-control" 
+            style={{ padding: '9px', fontSize: '13px' }}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
             <option>All Status</option>
             <option>Paid (Full)</option>
             <option>Unpaid / Overdue</option>
@@ -92,13 +126,20 @@ const AdminFees = () => {
         </div>
         <div style={{ flex: 1, minWidth: '180px' }}>
           <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Academic Program</label>
-          <select className="form-control" style={{ padding: '9px', fontSize: '13px' }}>
+          <select 
+            className="form-control" 
+            style={{ padding: '9px', fontSize: '13px' }}
+            value={programFilter}
+            onChange={(e) => setProgramFilter(e.target.value)}
+          >
             <option>All Programs</option>
-            <option>B.Sc Computer Science</option>
+            {[...new Set(programs?.map(p => p.name))].map(name => (
+              <option key={name} value={name}>{name}</option>
+            ))}
           </select>
         </div>
         <div style={{ alignSelf: 'flex-end' }}>
-          <button className="btn-primary" style={{ padding: '10px 24px' }}><i className="fas fa-filter"></i> Filter</button>
+          <button className="btn-primary" style={{ padding: '10px 24px' }} onClick={handleFilter}><i className="fas fa-filter"></i> Filter</button>
         </div>
       </div>
 
@@ -140,10 +181,14 @@ const AdminFees = () => {
                   <td>
                     <div className="action-btns">
                       {inv.status === 'Paid' ? (
-                        <button className="btn-sm" onClick={() => openReceipt(inv)}><i className="fas fa-print"></i> Receipt</button>
+                        <>
+                          <button className="btn-sm" onClick={() => openReceipt(inv)}><i className="fas fa-print"></i> Receipt</button>
+                          <button className="btn-sm" style={{ color: '#ef4444' }} onClick={() => handleDelete(inv._id)} title="Delete"><i className="fas fa-trash"></i></button>
+                        </>
                       ) : (
                         <>
                           <button className="btn-sm" onClick={() => openRecord(inv)}>Record Payment</button>
+                          <button className="btn-sm" style={{ color: '#ef4444' }} onClick={() => handleDelete(inv._id)} title="Delete"><i className="fas fa-trash"></i></button>
                         </>
                       )}
                     </div>

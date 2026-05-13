@@ -70,6 +70,7 @@ const StudentFees = () => {
             <thead>
               <tr>
                 <th style={{ padding: '14px 20px', textAlign: 'left', fontSize: '11px', background: '#f9fafb', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', borderBottom: '1px solid #e5e7eb' }}>Invoice ID</th>
+                <th style={{ padding: '14px 20px', textAlign: 'left', fontSize: '11px', background: '#f9fafb', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', borderBottom: '1px solid #e5e7eb' }}>Fee Type</th>
                 <th style={{ padding: '14px 20px', textAlign: 'left', fontSize: '11px', background: '#f9fafb', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', borderBottom: '1px solid #e5e7eb' }}>Description</th>
                 <th style={{ padding: '14px 20px', textAlign: 'left', fontSize: '11px', background: '#f9fafb', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', borderBottom: '1px solid #e5e7eb' }}>Amount</th>
                 <th style={{ padding: '14px 20px', textAlign: 'left', fontSize: '11px', background: '#f9fafb', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', borderBottom: '1px solid #e5e7eb' }}>Due Date</th>
@@ -79,12 +80,13 @@ const StudentFees = () => {
             <tbody>
               {fees.length === 0 ? (
                 <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: '#6b7280' }}>No fee records found.</td>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#6b7280' }}>No fee records found.</td>
                 </tr>
               ) : fees.map((fee, idx) => (
                 <tr key={idx}>
                   <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>{fee.invoiceId}</td>
-                  <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>{fee.description}</td>
+                  <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}><strong>{fee.feeType}</strong></td>
+                  <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>{fee.description || '-'}</td>
                   <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>${fee.amount.toLocaleString()}</td>
                   <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>{new Date(fee.dueDate).toLocaleDateString()}</td>
                   <td style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', borderBottom: '1px solid #e5e7eb' }}>

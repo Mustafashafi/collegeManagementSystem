@@ -260,11 +260,93 @@ router.delete('/students/:id', async (req, res) => {
 });
 
 // @route   GET /api/admin/fees
-// @desc    Get all fee records
+// @desc    Get all fee records with filters
 router.get('/fees', async (req, res) => {
   try {
-    const fees = await Fee.find().sort({ createdAt: -1 });
+    const { status, program } = req.query;
+    const query = {};
+    if (status && status !== 'All Status') {
+      if (status === 'Paid (Full)') query.status = 'Paid';
+      if (status === 'Unpaid / Overdue') query.status = { $in: ['Pending', 'Partial'] };
+    }
+    if (program && program !== 'All Programs') {
+      query.program = program;
+    }
+
+    const fees = await Fee.find(query).sort({ createdAt: -1 });
     res.json(fees);
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
+// @route   POST /api/admin/fees
+// @desc    Generate fee invoice(s)
+router.post('/fees', async (req, res) => {
+  try {
+    const { studentEmail, studentName, program, year, feeType, amount, dueDate, description } = req.body;
+    
+    if (studentEmail) {
+      // Check for existing invoice of same type
+      const existing = await Fee.findOne({ studentEmail, feeType });
+      if (existing) return res.status(400).json({ success: false, msg: `An invoice for ${feeType} already exists for this student.` });
+
+      // Single student - we need to find their program
+      const student = await Student.findOne({ email: studentEmail });
+      const finalInvoiceId = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const newFee = new Fee({
+        studentEmail,
+        studentName,
+        program: student ? student.program : '',
+        feeType,
+        amount,
+        dueDate,
+        description,
+        invoiceId: finalInvoiceId,
+        status: 'Pending',
+        amountPaid: 0
+      });
+      await newFee.save();
+      return res.json({ success: true, msg: 'Invoice generated for student' });
+    } else if (program && year) {
+      // Bulk generation for a class
+      const students = await Student.find({ program, year });
+      if (students.length === 0) return res.status(404).json({ success: false, msg: 'No students found in this program/year' });
+
+      // Filter out students who already have an invoice of this type
+      const existingFees = await Fee.find({ 
+        studentEmail: { $in: students.map(s => s.email) },
+        feeType 
+      });
+      const emailsWithFee = new Set(existingFees.map(f => f.studentEmail));
+
+      const studentsToInvoiced = students.filter(s => !emailsWithFee.has(s.email));
+
+      if (studentsToInvoiced.length === 0) {
+        return res.status(400).json({ success: false, msg: `All students in this class already have an invoice for ${feeType}.` });
+      }
+
+      const feeRecords = studentsToInvoiced.map(s => ({
+        studentEmail: s.email,
+        studentName: `${s.firstName} ${s.lastName}`,
+        program: s.program,
+        feeType,
+        amount,
+        dueDate,
+        description,
+        invoiceId: `INV-${Date.now()}-${s.studentId || s._id}-${Math.floor(Math.random() * 1000)}`,
+        status: 'Pending',
+        amountPaid: 0
+      }));
+
+      await Fee.insertMany(feeRecords);
+      return res.json({ 
+        success: true, 
+        msg: `Invoices generated for ${studentsToInvoiced.length} students. ${students.length - studentsToInvoiced.length} skipped (duplicates).` 
+      });
+    } else {
+      return res.status(400).json({ success: false, msg: 'Please provide either a student or a program/year' });
+    }
   } catch (err) {
     res.status(500).json({ success: false, msg: err.message });
   }
@@ -294,6 +376,18 @@ router.put('/fees/:id/record', async (req, res) => {
 
     await fee.save();
     res.json({ success: true, fee });
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
+// @route   DELETE /api/admin/fees/:id
+// @desc    Delete a fee record
+router.delete('/fees/:id', async (req, res) => {
+  try {
+    const fee = await Fee.findByIdAndDelete(req.params.id);
+    if (!fee) return res.status(404).json({ success: false, msg: 'Fee record not found' });
+    res.json({ success: true, msg: 'Fee record deleted successfully' });
   } catch (err) {
     res.status(500).json({ success: false, msg: err.message });
   }
