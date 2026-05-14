@@ -70,4 +70,44 @@ router.get('/student-360/:studentId', async (req, res) => {
   }
 });
 
+const multer = require('multer');
+const path = require('path');
+
+// Multer Config for fee receipts
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/fees/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+const upload = multer({ storage: storage });
+
+// @route   POST /api/parents/fees/:id/upload-receipt
+// @desc    Upload fee receipt and set status to 'Under Review'
+router.post('/fees/:id/upload-receipt', upload.single('receipt'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, msg: 'No receipt file uploaded' });
+    }
+
+    const { paymentMode } = req.body;
+
+    const fee = await Fee.findById(req.params.id);
+    if (!fee) return res.status(404).json({ success: false, msg: 'Fee not found' });
+
+    fee.receiptUrl = `/uploads/fees/${req.file.filename}`;
+    fee.status = 'Under Review';
+    fee.rejectionReason = null; // Clear previous rejection reason if any
+    fee.pendingPaymentMode = paymentMode || 'Online Upload';
+
+    await fee.save();
+    
+    res.json({ success: true, msg: 'Receipt uploaded successfully. Waiting for Admin review.', fee });
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
 module.exports = router;

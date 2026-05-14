@@ -9,14 +9,18 @@ const FeeSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   amountPaid: { type: Number, default: 0 },
   dueDate: { type: Date, required: true },
-  status: { type: String, enum: ['Paid', 'Pending', 'Partial'], default: 'Pending' },
+  status: { type: String, enum: ['Paid', 'Pending', 'Partial', 'Under Review', 'Rejected'], default: 'Pending' },
   program: { type: String },
   paidDate: { type: Date },
+  receiptUrl: { type: String },
+  rejectionReason: { type: String },
+  pendingPaymentMode: { type: String },
   paymentHistory: [
     {
       amount: Number,
       date: { type: Date, default: Date.now },
-      mode: String
+      mode: String,
+      receiptUrl: String
     }
   ]
 }, { timestamps: true });

@@ -29,6 +29,7 @@ export const adminApi = {
   getFees: (params) => api.get('/api/admin/fees', { params }),
   generateInvoice: (data) => api.post('/api/admin/fees', data),
   recordPayment: (id, data) => api.put(`/api/admin/fees/${id}/record`, data),
+  reviewFeeReceipt: (id, data) => api.put(`/api/admin/fees/${id}/review-receipt`, data),
   deleteFee: (id) => api.delete(`/api/admin/fees/${id}`),
   getTeacherAttendance: (date) => api.get('/api/admin/teacher-attendance', { params: { date } }),
   getTeacherAttendanceReport: (month, year, email) => api.get('/api/admin/teacher-attendance/report', { params: { month, year, email } }),
@@ -54,6 +55,7 @@ export const adminApi = {
 export const parentApi = {
   getChildren: (email) => api.get(`/api/parents/dashboard/${email}`),
   getStudent360: (studentId) => api.get(`/api/parents/student-360/${studentId}`),
+  uploadFeeReceipt: (id, formData) => api.post(`/api/parents/fees/${id}/upload-receipt`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
 };
 
 // Student/Common API

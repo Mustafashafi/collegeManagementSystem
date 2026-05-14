@@ -79,9 +79,41 @@ const AdminFees = () => {
     setShowReceipt(true);
   };
 
+  const [showReview, setShowReview] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+
   const openRecord = (inv) => {
     setSelectedInvoice(inv);
     setShowRecord(true);
+  };
+
+  const openReview = (inv) => {
+    setSelectedInvoice(inv);
+    setRejectReason('');
+    setShowReview(true);
+  };
+
+  const reviewMutation = useMutation({
+    mutationFn: ({ id, data }) => adminApi.reviewFeeReceipt(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['adminFees']);
+      queryClient.invalidateQueries(['adminStats']);
+      toast.success('Receipt reviewed successfully!');
+      setShowReview(false);
+    },
+    onError: () => {
+      toast.error('Failed to review receipt.');
+    }
+  });
+
+  const handleReview = (action) => {
+    if (action === 'reject' && !rejectReason) {
+      return toast.error('Please provide a reason for rejection.');
+    }
+    reviewMutation.mutate({
+      id: selectedInvoice._id,
+      data: { action, reason: rejectReason }
+    });
   };
 
   const handleFilter = () => {
@@ -174,7 +206,7 @@ const AdminFees = () => {
                   <td>${inv.amount.toLocaleString()}</td>
                   <td>${(inv.amountPaid || 0).toLocaleString()}</td>
                   <td>
-                    <span className={`status-badge ${inv.status === 'Paid' ? 'status-paid' : inv.status === 'Partial' ? 'status-partial' : 'status-unpaid'}`}>
+                    <span className={`status-badge ${inv.status === 'Paid' ? 'status-paid' : inv.status === 'Partial' ? 'status-partial' : inv.status === 'Under Review' ? 'status-review' : 'status-unpaid'}`}>
                       {inv.status}
                     </span>
                   </td>
@@ -184,6 +216,10 @@ const AdminFees = () => {
                         <>
                           <button className="btn-sm" onClick={() => openReceipt(inv)}><i className="fas fa-print"></i> Receipt</button>
                           <button className="btn-sm" style={{ color: '#ef4444' }} onClick={() => handleDelete(inv._id)} title="Delete"><i className="fas fa-trash"></i></button>
+                        </>
+                      ) : inv.status === 'Under Review' ? (
+                        <>
+                          <button className="btn-sm" style={{ background: '#d97706', color: '#fff', border: 'none' }} onClick={() => openReview(inv)}>Review Receipt</button>
                         </>
                       ) : (
                         <>
@@ -217,6 +253,7 @@ const AdminFees = () => {
                 <div className="info-item"><label>Receipt No</label><span>{selectedInvoice.invoiceId}</span></div>
                 <div className="info-item"><label>Date Issued</label><span>{new Date().toLocaleDateString()}</span></div>
                 <div className="info-item"><label>Student Email</label><span>{selectedInvoice.studentEmail}</span></div>
+                <div className="info-item"><label>Payment Method</label><span>{selectedInvoice.paymentHistory?.[selectedInvoice.paymentHistory.length - 1]?.mode || 'Online Transfer'}</span></div>
               </div>
               <table className="receipt-table">
                 <thead><tr><th>Description</th><th style={{ textAlign: 'right' }}>Amount</th></tr></thead>
@@ -277,6 +314,68 @@ const AdminFees = () => {
           </div>
         </div>
       )}
+
+      {/* Review Modal */}
+      {showReview && selectedInvoice && (
+        <div className="modal-overlay" onClick={() => setShowReview(false)}>
+          <div className="record-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="record-header">
+              <h2>Review Fee Receipt</h2>
+              <button onClick={() => setShowReview(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>&times;</button>
+            </div>
+            <div className="record-body">
+              <div style={{ background: '#f3f4f6', padding: '12px', borderRadius: '8px', marginBottom: '20px', fontSize: '13px' }}>
+                <p><strong>Student:</strong> {selectedInvoice.studentEmail}</p>
+                <p><strong>Fee Type:</strong> {selectedInvoice.feeType}</p>
+                <p><strong>Claimed Method:</strong> {selectedInvoice.pendingPaymentMode || 'Online Upload'}</p>
+                <p><strong>Amount Due:</strong> <span style={{ color: '#ef4444', fontWeight: 700 }}>${selectedInvoice.amount}</span></p>
+              </div>
+              
+              <div style={{ marginBottom: '20px', textAlign: 'center', border: '1px solid #e5e7eb', padding: '10px', borderRadius: '8px' }}>
+                <h4 style={{ marginBottom: '10px' }}>Uploaded Receipt</h4>
+                {selectedInvoice.receiptUrl && selectedInvoice.receiptUrl.endsWith('.pdf') ? (
+                  <a href={`http://localhost:5000${selectedInvoice.receiptUrl}`} target="_blank" rel="noreferrer" className="btn-primary" style={{ padding: '8px 16px', display: 'inline-block' }}>View PDF Receipt</a>
+                ) : (
+                  <a href={`http://localhost:5000${selectedInvoice.receiptUrl}`} target="_blank" rel="noreferrer">
+                    <img src={`http://localhost:5000${selectedInvoice.receiptUrl}`} alt="Receipt" style={{ maxWidth: '100%', maxHeight: '300px', objectFit: 'contain', borderRadius: '4px' }} />
+                  </a>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>Rejection Reason (Optional, required if rejecting)</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  placeholder="e.g., Image is blurry, Invalid receipt..." 
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                />
+              </div>
+              
+              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                <button 
+                  className="btn-submit-payment" 
+                  onClick={() => handleReview('accept')}
+                  disabled={reviewMutation.isLoading}
+                  style={{ flex: 1, background: '#10b981' }}
+                >
+                  {reviewMutation.isLoading ? 'Processing...' : 'Accept & Mark Paid'}
+                </button>
+                <button 
+                  className="btn-submit-payment" 
+                  onClick={() => handleReview('reject')}
+                  disabled={reviewMutation.isLoading}
+                  style={{ flex: 1, background: '#ef4444' }}
+                >
+                  {reviewMutation.isLoading ? 'Processing...' : 'Reject Receipt'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

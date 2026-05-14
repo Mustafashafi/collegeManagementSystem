@@ -127,13 +127,21 @@ router.post('/:id/enroll', async (req, res) => {
     const existingUser = await User.findOne({ email: app.email });
     if (existingUser) return res.status(400).json({ success: false, msg: 'A user with this email already exists' });
 
-    // 2. Generate Student ID (find highest existing ID to avoid duplicates)
+    // 2. Generate Student ID (find highest existing ID numerically to avoid duplicates)
     const year = new Date().getFullYear();
-    const lastStudent = await Student.findOne({ studentId: { $regex: `^S-${year}` } }).sort({ studentId: -1 });
+    const existingStudents = await Student.find({ studentId: { $regex: `^S-${year}` } }, { studentId: 1 });
+    
     let nextNum = 1;
-    if (lastStudent) {
-      const lastNum = parseInt(lastStudent.studentId.split('-')[2]);
-      nextNum = lastNum + 1;
+    if (existingStudents.length > 0) {
+      const maxNum = existingStudents.reduce((max, student) => {
+        const parts = student.studentId.split('-');
+        if (parts.length === 3) {
+          const num = parseInt(parts[2], 10);
+          return num > max ? num : max;
+        }
+        return max;
+      }, 0);
+      nextNum = maxNum + 1;
     }
     const studentId = `S-${year}-${nextNum.toString().padStart(3, '0')}`;
 

@@ -438,6 +438,40 @@ router.put('/fees/:id/record', async (req, res) => {
   }
 });
 
+// @route   PUT /api/admin/fees/:id/review-receipt
+// @desc    Accept or Reject a fee receipt
+router.put('/fees/:id/review-receipt', async (req, res) => {
+  try {
+    const { action, reason } = req.body; // action: 'accept' or 'reject'
+    const fee = await Fee.findById(req.params.id);
+    if (!fee) return res.status(404).json({ success: false, msg: 'Fee record not found' });
+
+    if (action === 'accept') {
+      fee.status = 'Paid';
+      fee.amountPaid = fee.amount;
+      fee.paymentHistory = fee.paymentHistory || [];
+      fee.paymentHistory.push({
+        date: new Date(),
+        amount: fee.amount,
+        mode: fee.pendingPaymentMode || 'Online Upload',
+        receiptUrl: fee.receiptUrl
+      });
+      fee.rejectionReason = null;
+      fee.pendingPaymentMode = null;
+    } else if (action === 'reject') {
+      fee.status = 'Rejected';
+      fee.rejectionReason = reason || 'Your receipt was invalid or illegible. Please upload a clear, valid receipt.';
+    } else {
+      return res.status(400).json({ success: false, msg: 'Invalid action' });
+    }
+
+    await fee.save();
+    res.json({ success: true, msg: `Receipt ${action}ed successfully.`, fee });
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
 // @route   DELETE /api/admin/fees/:id
 // @desc    Delete a fee record
 router.delete('/fees/:id', async (req, res) => {
