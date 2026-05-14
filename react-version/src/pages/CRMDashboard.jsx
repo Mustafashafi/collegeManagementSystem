@@ -17,8 +17,11 @@ const CRMDashboard = () => {
           fetch(`${API_BASE_URL}/api/applications`)
         ]);
         
-        const leadsData = await leadsRes.json();
-        const appsData = await appsRes.json();
+        let leadsData = await leadsRes.json();
+        let appsData = await appsRes.json();
+        
+        if (!Array.isArray(leadsData)) leadsData = [];
+        if (!Array.isArray(appsData)) appsData = [];
         
         setLeads(leadsData);
         setApplicationsList(appsData);

@@ -73,7 +73,8 @@ const TeacherResults = () => {
 
         // Fetch students
         const response = await fetch(`${API_BASE_URL}/api/teachers/students/${encodeURIComponent(program)}?subject=${encodeURIComponent(subject)}&year=${encodeURIComponent(year)}`);
-        const data = await response.json();
+        let data = await response.json();
+        if (!Array.isArray(data)) data = [];
         setStudents(data);
 
         // Fetch existing results

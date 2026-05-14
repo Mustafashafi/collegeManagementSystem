@@ -9,12 +9,12 @@ const LibrarianDashboard = () => {
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['libraryStats'],
-    queryFn: () => libraryApi.getStats().then(res => res.data),
+    queryFn: () => libraryApi.getStats().then(res => res.data || { totalBooks: 0, currentlyIssued: 0, pendingRequests: 0, overdue: 0 }),
   });
 
   const { data: requests, isLoading: requestsLoading } = useQuery({
     queryKey: ['libraryRequests'],
-    queryFn: () => libraryApi.getRequests().then(res => res.data),
+    queryFn: () => libraryApi.getRequests().then(res => Array.isArray(res.data) ? res.data : []),
   });
 
   const updateRequestMutation = useMutation({

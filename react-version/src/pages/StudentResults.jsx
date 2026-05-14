@@ -52,7 +52,8 @@ const StudentResults = () => {
 
         if (profileData && profileData.program) {
           const ttRes = await fetch(`${API_BASE_URL}/api/students/timetable/${profileData.program}`);
-          const ttData = await ttRes.json();
+          let ttData = await ttRes.json();
+          if (!Array.isArray(ttData)) ttData = [];
           setTimetable(ttData);
         }
       } catch (err) {

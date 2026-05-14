@@ -9,7 +9,7 @@ const LibrarianBooks = () => {
 
   const { data: books, isLoading } = useQuery({
     queryKey: ['libraryBooks', search, category],
-    queryFn: () => libraryApi.getBooks({ search, category }).then(res => res.data),
+    queryFn: () => libraryApi.getBooks({ search, category }).then(res => Array.isArray(res.data) ? res.data : []),
   });
 
   const categories = Array.from(new Set(books?.map(b => b.category) || []));

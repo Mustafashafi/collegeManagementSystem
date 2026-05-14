@@ -17,7 +17,9 @@ const CRMApplications = () => {
   const fetchApplications = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/applications`);
-      const data = await response.json();
+      let data = await response.json();
+
+      if (!Array.isArray(data)) data = [];
 
       const formattedApps = data.map(app => ({
         ...app,

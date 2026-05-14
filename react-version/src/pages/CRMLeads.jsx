@@ -20,7 +20,9 @@ const CRMLeads = () => {
   const fetchLeads = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/leads`);
-      const data = await response.json();
+      let data = await response.json();
+      
+      if (!Array.isArray(data)) data = [];
       
       const formattedLeads = data.map(lead => ({
         ...lead,

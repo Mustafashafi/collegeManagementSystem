@@ -22,7 +22,8 @@ const CRMPipeline = () => {
   const fetchLeads = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/leads`);
-      const data = await response.json();
+      let data = await response.json();
+      if (!Array.isArray(data)) data = [];
       setLeads(data);
     } catch (err) {
       console.error('Error fetching leads:', err);

@@ -13,16 +13,15 @@ const ParentDashboard = () => {
     const fetchChildren = async () => {
       try {
         const response = await parentApi.getChildren(user.email);
-        // The API now returns { students, applications }
-        // We only care about enrolled students for the portal access now
-        const students = response.data.students || [];
+        const res = response.data;
+        const students = (res && Array.isArray(res.students)) ? res.students : [];
         setChildren(students);
         
         if (students.length > 0) {
           setSelectedChild(students[0]);
         }
       } catch (err) {
-        toast.error("Failed to fetch children data");
+        console.error("Failed to fetch children data:", err);
       } finally {
         setLoading(false);
       }
@@ -35,9 +34,18 @@ const ParentDashboard = () => {
       if (!selectedChild) return;
       try {
         const response = await parentApi.getStudent360(selectedChild.studentId);
-        setAcademicData(response.data);
+        let data = response.data;
+        // Fallback for missing fields if RBAC blocks some nested data
+        if (!data || data.success === false) {
+           data = { stats: { attendanceRate: 0, pendingFees: 0, activeAssignments: 0 }, results: [], fees: [] };
+        }
+        if (!Array.isArray(data.results)) data.results = [];
+        if (!Array.isArray(data.fees)) data.fees = [];
+        if (!data.stats) data.stats = { attendanceRate: 0, pendingFees: 0, activeAssignments: 0 };
+        
+        setAcademicData(data);
       } catch (err) {
-        toast.error("Failed to load student profile");
+        console.error("Failed to load student profile:", err);
       }
     };
     fetchStudentDetails();

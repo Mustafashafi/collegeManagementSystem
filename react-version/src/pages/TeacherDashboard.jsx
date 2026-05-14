@@ -13,9 +13,17 @@ const TeacherDashboard = () => {
     const fetchDashboardData = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/teachers/dashboard/${user.email}`);
-        const result = await response.json();
+        let result = await response.json();
         if (response.ok) {
+          // Guard against non-array parts if API returns them
+          if (!Array.isArray(result.schedule)) result.schedule = [];
+          if (!Array.isArray(result.recentAssignments)) result.recentAssignments = [];
+          if (!result.stats) result.stats = { totalStudents: 0, classesToday: 0, assignmentsToGrade: 0 };
+          
           setData(result);
+        } else {
+          // If 403 or other error, set empty data to avoid crashing
+          setData({ teacher: { name: user.name }, schedule: [], recentAssignments: [], stats: { totalStudents: 0, classesToday: 0, assignmentsToGrade: 0 } });
         }
       } catch (err) {
         console.error('Error fetching teacher dashboard:', err);

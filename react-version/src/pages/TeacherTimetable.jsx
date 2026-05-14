@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { API_BASE_URL } from '../config/api';
+import { authApi } from '../services/api';
 import TeacherLayout from '../components/TeacherLayout';
 
 const TeacherTimetable = () => {
@@ -9,13 +10,30 @@ const TeacherTimetable = () => {
   const [loading, setLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
+  const [canView, setCanView] = useState(true);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Check Permissions
+        const permRes = await authApi.getPermissions('teacher');
+        if (permRes.data.success) {
+          const timetablePerm = permRes.data.permissions.find(p => p.name === 'View Timetable');
+          if (timetablePerm && !timetablePerm.enabled) {
+            setCanView(false);
+            setLoading(false);
+            return;
+          }
+        }
+
         const dashboardRes = await fetch(`${API_BASE_URL}/api/teachers/dashboard/${user.email}`);
         const dashboardData = await dashboardRes.json();
         setProfile(dashboardData.teacher);
-        setTimetable(dashboardData.fullSchedule || []);
+        
+        // Guard against potential non-array if dashboard endpoint starts checking permissions
+        let schedule = dashboardData.fullSchedule;
+        if (!Array.isArray(schedule)) schedule = [];
+        setTimetable(schedule);
       } catch (err) {
         console.error('Error fetching timetable:', err);
         toast.error("Failed to load timetable.");
@@ -33,6 +51,23 @@ const TeacherTimetable = () => {
       <TeacherLayout>
         <div className="dashboard-content" style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
           <i className="fas fa-spinner fa-spin" style={{ fontSize: '30px' }}></i>
+        </div>
+      </TeacherLayout>
+    );
+  }
+
+  if (!canView) {
+    return (
+      <TeacherLayout>
+        <div className="dashboard-content" style={{ padding: '40px', textAlign: 'center' }}>
+          <div style={{ background: '#fff', padding: '60px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+            <i className="fas fa-lock" style={{ fontSize: '48px', color: '#ef4444', marginBottom: '20px' }}></i>
+            <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#111827', marginBottom: '12px' }}>Access Restricted</h2>
+            <p style={{ color: '#6b7280', maxWidth: '400px', margin: '0 auto' }}>
+              The Timetable feature has been temporarily disabled by the administration. 
+              Please check back later or contact the academic office for information.
+            </p>
+          </div>
         </div>
       </TeacherLayout>
     );
