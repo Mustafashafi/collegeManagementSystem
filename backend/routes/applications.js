@@ -51,7 +51,7 @@ router.post('/', upload.fields([
   try {
     const {
       firstName, lastName, dob, gender, email, phone, address,
-      previousInstitution, passingYear, marks, program
+      previousInstitution, passingYear, marks, program, fatherName, parentEmail
     } = req.body;
 
     // Generate unique Application ID: APP-YYYY-NNN
@@ -77,6 +77,8 @@ router.post('/', upload.fields([
       passingYear,
       marks,
       program,
+      fatherName,
+      parentEmail,
       idDocument: req.files['idDocument'] ? req.files['idDocument'][0].path : null,
       transcriptDocument: req.files['transcriptDocument'] ? req.files['transcriptDocument'][0].path : null
     });
@@ -108,23 +110,38 @@ router.put('/:id/status', async (req, res) => {
 
 
 // @route   POST /api/applications/:id/enroll
-// @desc    Enroll applicant as a student, create user account, and initial fee
+// @desc    Enroll applicant as a student, create user account, and parent portal
 router.post('/:id/enroll', async (req, res) => {
   try {
     const app = await Application.findById(req.params.id);
     if (!app) return res.status(404).json({ success: false, msg: 'Application not found' });
 
+    console.log(`\n=== ENROLLMENT START: ${app.firstName} ${app.lastName} ===`);
+    console.log(`  App ID: ${app.appId}`);
+    console.log(`  Email: ${app.email}`);
+    console.log(`  Phone: ${app.phone}`);
+    console.log(`  Father Name: [${app.fatherName}]`);
+    console.log(`  Parent Email: [${app.parentEmail}]`);
+
     // 1. Check if user already exists
     const existingUser = await User.findOne({ email: app.email });
     if (existingUser) return res.status(400).json({ success: false, msg: 'A user with this email already exists' });
 
-    // 2. Generate Student ID
-    const count = await Student.countDocuments();
+    // 2. Generate Student ID (find highest existing ID to avoid duplicates)
     const year = new Date().getFullYear();
-    const studentId = `S-${year}-${(count + 1).toString().padStart(3, '0')}`;
+    const lastStudent = await Student.findOne({ studentId: { $regex: `^S-${year}` } }).sort({ studentId: -1 });
+    let nextNum = 1;
+    if (lastStudent) {
+      const lastNum = parseInt(lastStudent.studentId.split('-')[2]);
+      nextNum = lastNum + 1;
+    }
+    const studentId = `S-${year}-${nextNum.toString().padStart(3, '0')}`;
 
-    // 3. Create Student Record
-    const newStudent = new Student({
+    // 3. Default password = student phone number (digits only)
+    const defaultPassword = app.phone.replace(/\D/g, '');
+
+    // 4. Create Student Record (with parent details from application)
+    const studentData = {
       studentId,
       firstName: app.firstName,
       lastName: app.lastName,
@@ -136,11 +153,23 @@ router.post('/:id/enroll', async (req, res) => {
       program: app.program,
       year: '1st Year',
       applicationRef: app._id
-    });
-    await newStudent.save();
+    };
 
-    // 4. Create User Account
-    const defaultPassword = app.phone.replace(/\D/g, ''); 
+    // Only set parent fields if they actually have values
+    if (app.fatherName && app.fatherName.trim()) {
+      studentData.fatherName = app.fatherName.trim();
+    }
+    if (app.parentEmail && app.parentEmail.trim()) {
+      studentData.parentEmail = app.parentEmail.trim().toLowerCase();
+    }
+
+    const newStudent = new Student(studentData);
+    await newStudent.save();
+    console.log(`  ✅ Student Record Created: ${studentId}`);
+    console.log(`  Student.fatherName = [${newStudent.fatherName}]`);
+    console.log(`  Student.parentEmail = [${newStudent.parentEmail}]`);
+
+    // 5. Create Student Portal Account
     const newUser = new User({
       name: `${app.firstName} ${app.lastName}`,
       email: app.email,
@@ -148,7 +177,29 @@ router.post('/:id/enroll', async (req, res) => {
       role: 'student'
     });
     await newUser.save();
+    console.log(`  ✅ Student Portal Created: ${app.email} (pwd: ${defaultPassword})`);
 
+    // 6. Create Parent Portal Account if parentEmail exists
+    if (newStudent.parentEmail) {
+      const parentEmail = newStudent.parentEmail;
+      const existingParent = await User.findOne({ email: parentEmail });
+      
+      if (!existingParent) {
+        const parentName = newStudent.fatherName || `Parent of ${app.firstName}`;
+        const newParent = new User({
+          name: parentName,
+          email: parentEmail,
+          password: defaultPassword, // Parent password = student's phone number
+          role: 'parent'
+        });
+        await newParent.save();
+        console.log(`  ✅ Parent Portal Created: ${parentEmail} (name: ${parentName}, pwd: ${defaultPassword})`);
+      } else {
+        console.log(`  ⚠️ Parent account already exists: ${parentEmail} — skipping creation`);
+      }
+    } else {
+      console.log(`  ⚠️ No parentEmail found — skipping parent portal creation`);
+    }
 
     // 7. Update application status
     app.status = 'Enrolled';
@@ -162,6 +213,64 @@ router.post('/:id/enroll', async (req, res) => {
     if (lead) {
       await Task.updateMany({ lead: lead._id }, { status: 'Completed' });
     }
+
+    // 9. Auto-assign existing assignments for this class
+    const classAssignments = await Assignment.aggregate([
+      { $match: { program: newStudent.program, year: newStudent.year } },
+      {
+        $group: {
+          _id: { title: "$title", subject: "$subject", teacher: "$teacher" },
+          details: { $first: "$$ROOT" }
+        }
+      }
+    ]);
+
+    if (classAssignments.length > 0) {
+      const studentAssignments = classAssignments.map(item => ({
+        studentEmail: newStudent.email,
+        title: item._id.title,
+        subject: item._id.subject,
+        teacher: item._id.teacher,
+        program: newStudent.program,
+        year: newStudent.year,
+        dueDate: item.details.dueDate,
+        description: item.details.description,
+        assignmentFile: item.details.assignmentFile,
+        status: 'Pending'
+      }));
+      await Assignment.insertMany(studentAssignments);
+      console.log(`  ✅ Auto-assigned ${studentAssignments.length} past assignments.`);
+    }
+
+    // 10. Auto-assign existing fees for this class
+    const classFees = await Fee.aggregate([
+      { $match: { program: newStudent.program } },
+      {
+        $group: {
+          _id: { feeType: "$feeType", amount: "$amount", dueDate: "$dueDate" },
+          details: { $first: "$$ROOT" }
+        }
+      }
+    ]);
+
+    if (classFees.length > 0) {
+      const studentFees = classFees.map(item => ({
+        studentEmail: newStudent.email,
+        studentName: `${newStudent.firstName} ${newStudent.lastName}`,
+        program: newStudent.program,
+        feeType: item._id.feeType,
+        amount: item._id.amount,
+        dueDate: item._id.dueDate,
+        description: item.details.description,
+        invoiceId: `INV-${Date.now()}-${newStudent.studentId}-${Math.floor(Math.random() * 1000)}`,
+        status: 'Pending',
+        amountPaid: 0
+      }));
+      await Fee.insertMany(studentFees);
+      console.log(`  ✅ Auto-assigned ${studentFees.length} past fee invoices.`);
+    }
+
+    console.log(`=== ENROLLMENT COMPLETE: ${app.firstName} ${app.lastName} ===\n`);
 
     res.json({ 
       success: true, 

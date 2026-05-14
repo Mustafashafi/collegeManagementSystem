@@ -50,6 +50,18 @@ export const adminApi = {
   deleteRole: (id) => api.delete(`/api/admin/roles/${id}`),
 };
 
+// Parent API
+export const parentApi = {
+  getChildren: (email) => api.get(`/api/parents/dashboard/${email}`),
+  getStudent360: (studentId) => api.get(`/api/parents/student-360/${studentId}`),
+};
+
+// Student/Common API
+export const studentApi = {
+  getTimetable: (program, year) => api.get(`/api/students/timetable/${program}`, { params: { year } }),
+  getProfile: (email) => api.get(`/api/students/profile/${email}`),
+};
+
 // Auth API
 export const authApi = {
   login: (credentials) => api.post('/api/auth/login', credentials),

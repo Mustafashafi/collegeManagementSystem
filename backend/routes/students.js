@@ -4,10 +4,11 @@ const upload = require('../middleware/upload');
 const Assignment = require('../models/Assignment');
 const Student = require('../models/Student');
 const Fee = require('../models/Fee');
+const checkPermission = require('../middleware/permission');
 
 // @route   POST /api/students/assignments/submit/:id
 // @desc    Submit an assignment with file
-router.post('/assignments/submit/:id', (req, res, next) => {
+router.post('/assignments/submit/:id', checkPermission('Student', 'Submit Assignments'), (req, res, next) => {
   console.log(`--- INCOMING SUBMISSION REQUEST ---`);
   console.log(`Method: ${req.method} | URL: ${req.originalUrl}`);
   next();
@@ -84,7 +85,7 @@ router.get('/fees/:email', async (req, res) => {
 
 // @route   GET /api/students/assignments/:email
 // @desc    Get student assignments by email
-router.get('/assignments/:email', async (req, res) => {
+router.get('/assignments/:email', checkPermission('Student', 'Submit Assignments'), async (req, res) => {
   try {
     const assignments = await Assignment.find({ studentEmail: req.params.email }).sort({ dueDate: 1 });
     res.json(assignments);
@@ -110,7 +111,7 @@ const Result = require('../models/Result');
 
 // @route   GET /api/students/results/:email
 // @desc    Get student exam results by email
-router.get('/results/:email', async (req, res) => {
+router.get('/results/:email', checkPermission('Student', 'View Results'), async (req, res) => {
   try {
     const results = await Result.find({ studentEmail: req.params.email }).sort({ date: -1 });
     res.json(results);
@@ -123,7 +124,7 @@ const Timetable = require('../models/Timetable');
 
 // @route   GET /api/students/timetable/:program
 // @desc    Get timetable by program and year
-router.get('/timetable/:program', async (req, res) => {
+router.get('/timetable/:program', checkPermission('Student', 'View Timetable'), async (req, res) => {
   try {
     const { year } = req.query;
     const query = { program: req.params.program };

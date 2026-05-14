@@ -2,18 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { API_BASE_URL } from '../config/api';
+import { authApi } from '../services/api';
 
 const StudentAssignments = () => {
   const navigate = useNavigate();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [canSubmit, setCanSubmit] = useState(true);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
     const fetchAssignments = async () => {
       try {
+        // Check Permissions
+        const permRes = await authApi.getPermissions('student');
+        if (permRes.data.success) {
+          const submitPerm = permRes.data.permissions.find(p => p.name === 'Submit Assignments');
+          if (submitPerm && !submitPerm.enabled) {
+            setCanSubmit(false);
+            setLoading(false);
+            return;
+          }
+        }
+
         const response = await fetch(`${API_BASE_URL}/api/students/assignments/${user.email}`);
-        const data = await response.json();
+        let data = await response.json();
+        if (!Array.isArray(data)) data = [];
         setAssignments(data);
       } catch (err) {
         console.error('Error fetching assignments:', err);
@@ -29,6 +43,22 @@ const StudentAssignments = () => {
     return (
       <div className="dashboard-content" style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
         <i className="fas fa-spinner fa-spin" style={{ fontSize: '30px' }}></i>
+      </div>
+    );
+  }
+
+  if (!canSubmit) {
+    return (
+      <div className="dashboard-content">
+        <div style={{ textAlign: 'center', padding: '100px 20px', background: '#fff', borderRadius: '16px', border: '1px solid #fee2e2' }}>
+          <div style={{ width: '80px', height: '80px', background: '#fff7ed', color: '#ea580c', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', margin: '0 auto 24px' }}>
+            <i className="fas fa-folder-minus"></i>
+          </div>
+          <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#111827', marginBottom: '12px' }}>Submissions Restricted</h2>
+          <p style={{ color: '#6b7280', maxWidth: '400px', margin: '0 auto' }}>
+            Assignment submission has been temporarily disabled for your account. Please consult the academic department for further details.
+          </p>
+        </div>
       </div>
     );
   }

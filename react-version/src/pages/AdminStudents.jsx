@@ -10,6 +10,7 @@ const AdminStudents = () => {
   const [program, setProgram] = useState('');
   const [year, setYear] = useState('');
   const [status, setStatus] = useState('');
+  const [editingStudent, setEditingStudent] = useState(null);
 
   const { data: filters } = useQuery({
     queryKey: ['adminFilters'],
@@ -33,10 +34,25 @@ const AdminStudents = () => {
     onError: () => toast.error('Failed to delete student')
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => adminApi.updateStudent(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['adminStudents']);
+      toast.success('Student updated successfully');
+      setEditingStudent(null);
+    },
+    onError: (err) => toast.error(err.response?.data?.msg || 'Update failed')
+  });
+
   const handleDelete = (id) => {
     if (window.confirm('Are you sure you want to delete this student? This action cannot be undone.')) {
       deleteMutation.mutate(id);
     }
+  };
+
+  const handleUpdate = (e) => {
+    e.preventDefault();
+    updateMutation.mutate({ id: editingStudent._id, data: editingStudent });
   };
 
   const students = data?.students || [];
@@ -115,7 +131,7 @@ const AdminStudents = () => {
                   <th>Student Name & ID</th>
                   <th>Program & Year</th>
                   <th>Contact Info</th>
-                  <th>Enrollment Date</th>
+                  <th>Guardian Details</th>
                   <th>Status</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
@@ -144,10 +160,21 @@ const AdminStudents = () => {
                       {student.email}<br />
                       <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{student.phone}</span>
                     </td>
-                    <td>{new Date(student.admissionDate || student.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                    <td>
+                      {student.fatherName || 'Not Linked'}<br />
+                      <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{student.parentEmail || 'No Portal'}</span>
+                    </td>
                     <td><span className={`status-badge ${student.status === 'Active' ? 'status-active' : 'status-inactive'}`}>{student.status}</span></td>
                     <td style={{ textAlign: 'right' }}>
                       <div className="action-btns" style={{ justifyContent: 'flex-end' }}>
+                        <button 
+                          className="btn-icon" 
+                          title="Edit Profile" 
+                          style={{ color: '#3b82f6', background: 'rgba(59, 130, 246, 0.1)' }}
+                          onClick={() => setEditingStudent(student)}
+                        >
+                          <i className="fas fa-edit"></i>
+                        </button>
                         <button 
                           className="btn-icon" 
                           title="Delete Permanently" 
@@ -185,6 +212,52 @@ const AdminStudents = () => {
           </>
         )}
       </div>
+
+      {/* Edit Student Modal */}
+      {editingStudent && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="modal-content" style={{ background: '#fff', padding: '30px', borderRadius: '12px', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '20px' }}>Edit Student & Parent Details</h2>
+            <form onSubmit={handleUpdate}>
+              <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                <div className="form-group">
+                  <label>First Name</label>
+                  <input type="text" className="form-control" value={editingStudent.firstName} onChange={(e) => setEditingStudent({...editingStudent, firstName: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label>Last Name</label>
+                  <input type="text" className="form-control" value={editingStudent.lastName} onChange={(e) => setEditingStudent({...editingStudent, lastName: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label>Email</label>
+                  <input type="email" className="form-control" value={editingStudent.email} onChange={(e) => setEditingStudent({...editingStudent, email: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label>Phone</label>
+                  <input type="text" className="form-control" value={editingStudent.phone} onChange={(e) => setEditingStudent({...editingStudent, phone: e.target.value})} />
+                </div>
+                
+                <h4 style={{ gridColumn: 'span 2', fontSize: '14px', fontWeight: 700, marginTop: '15px', color: 'var(--primary)' }}>Guardian Linkage</h4>
+                <div className="form-group">
+                  <label>Father's Name</label>
+                  <input type="text" className="form-control" placeholder="Enter Father's Name" value={editingStudent.fatherName || ''} onChange={(e) => setEditingStudent({...editingStudent, fatherName: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label>Parent Email (Auto-Portal)</label>
+                  <input type="email" className="form-control" placeholder="parent@example.com" value={editingStudent.parentEmail || ''} onChange={(e) => setEditingStudent({...editingStudent, parentEmail: e.target.value})} />
+                </div>
+              </div>
+              
+              <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button type="button" className="btn-cancel" onClick={() => setEditingStudent(null)}>Cancel</button>
+                <button type="submit" className="btn-submit" disabled={updateMutation.isLoading}>
+                  {updateMutation.isLoading ? 'Updating...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

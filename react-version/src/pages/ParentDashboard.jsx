@@ -1,119 +1,206 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { parentApi } from '../services/api';
+import toast from 'react-hot-toast';
 
 const ParentDashboard = () => {
+  const [children, setChildren] = useState([]);
+  const [selectedChild, setSelectedChild] = useState(null);
+  const [academicData, setAcademicData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  useEffect(() => {
+    const fetchChildren = async () => {
+      try {
+        const response = await parentApi.getChildren(user.email);
+        // The API now returns { students, applications }
+        // We only care about enrolled students for the portal access now
+        const students = response.data.students || [];
+        setChildren(students);
+        
+        if (students.length > 0) {
+          setSelectedChild(students[0]);
+        }
+      } catch (err) {
+        toast.error("Failed to fetch children data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (user.email) fetchChildren();
+  }, [user.email]);
+
+  useEffect(() => {
+    const fetchStudentDetails = async () => {
+      if (!selectedChild) return;
+      try {
+        const response = await parentApi.getStudent360(selectedChild.studentId);
+        setAcademicData(response.data);
+      } catch (err) {
+        toast.error("Failed to load student profile");
+      }
+    };
+    fetchStudentDetails();
+  }, [selectedChild]);
+
+  if (loading) {
+    return (
+      <div className="dashboard-content" style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
+        <i className="fas fa-spinner fa-spin" style={{ fontSize: '30px' }}></i>
+      </div>
+    );
+  }
+
+  if (children.length === 0) {
+    return (
+      <div className="dashboard-content">
+        <div style={{ textAlign: 'center', padding: '100px 20px', background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb' }}>
+          <div style={{ width: '80px', height: '80px', background: '#f3f4f6', color: '#9ca3af', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', margin: '0 auto 24px' }}>
+            <i className="fas fa-user-slash"></i>
+          </div>
+          <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#111827', marginBottom: '12px' }}>No Children Linked</h2>
+          <p style={{ color: '#6b7280', maxWidth: '400px', margin: '0 auto' }}>
+            Your account is not currently linked to any active student records. Please contact the college administration to link your email to your child's profile.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-content">
       <div className="page-header" style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Parent Overview</h1>
-          <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '4px' }}>Monitor your child's academic progress, attendance, and fee status.</p>
+          <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Parent Portal</h1>
+          <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '4px' }}>Monitor your child's academic progress and institutional records.</p>
         </div>
       </div>
 
-      <div className="child-selector" style={{ background: '#fff', padding: '10px 16px', borderRadius: '8px', border: '1px solid #e5e7eb', display: 'inline-flex', alignItems: 'center', gap: '12px', marginBottom: '24px', cursor: 'pointer' }}>
-        <div className="child-avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <i className="fas fa-user-graduate" style={{ color: '#9ca3af', fontSize: '14px' }}></i>
-        </div>
-        <div className="child-info">
-          <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#111827' }}>Michael Chen</h4>
-          <p style={{ fontSize: '11px', color: '#6b7280' }}>B.Sc Computer Science • 2nd Year</p>
-        </div>
-        <i className="fas fa-chevron-down" style={{ color: '#9ca3af', fontSize: '12px', marginLeft: '16px' }}></i>
-      </div>
-
-      <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-        <div className="stat-card" style={{ background: '#fff', padding: '24px', borderRadius: '8px', border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-          <div style={{ marginBottom: '16px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Attendance</span>
-          </div>
-          <div className="stat-val" style={{ fontSize: '24px', fontWeight: 700, color: '#111827', marginBottom: '4px' }}>85%</div>
-          <div className="stat-desc" style={{ fontSize: '12px', color: '#10b981', fontWeight: 500 }}>Good Standing</div>
-          <i className="fas fa-user-check" style={{ fontSize: '16px', color: '#111827', position: 'absolute', top: '24px', right: '24px' }}></i>
-        </div>
-        <div className="stat-card" style={{ background: '#fff', padding: '24px', borderRadius: '8px', border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-          <div style={{ marginBottom: '16px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Latest Grade</span>
-          </div>
-          <div className="stat-val" style={{ fontSize: '24px', fontWeight: 700, color: '#111827', marginBottom: '4px' }}>A-</div>
-          <div className="stat-desc" style={{ fontSize: '12px', color: '#6b7280' }}>Data Structures Exam</div>
-          <i className="fas fa-award" style={{ fontSize: '16px', color: '#111827', position: 'absolute', top: '24px', right: '24px' }}></i>
-        </div>
-        <div className="stat-card" style={{ background: '#fff', padding: '24px', borderRadius: '8px', border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-          <div style={{ marginBottom: '16px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pending Fees</span>
-          </div>
-          <div className="stat-val" style={{ fontSize: '24px', fontWeight: 700, color: '#ef4444', marginBottom: '4px' }}>$0.00</div>
-          <div className="stat-desc" style={{ fontSize: '12px', color: '#6b7280' }}>All dues cleared</div>
-          <i className="fas fa-file-invoice" style={{ fontSize: '16px', color: '#111827', position: 'absolute', top: '24px', right: '24px' }}></i>
+      {/* Child Selector */}
+      <div style={{ marginBottom: '24px' }}>
+        <label style={{ fontSize: '11px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', display: 'block', marginBottom: '12px' }}>Select Student</label>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          {children.map(child => (
+            <div 
+              key={child._id}
+              onClick={() => setSelectedChild(child)}
+              style={{ 
+                background: selectedChild?._id === child._id ? 'var(--primary)' : '#fff', 
+                color: selectedChild?._id === child._id ? '#fff' : '#1a1a1a',
+                padding: '12px 20px', 
+                borderRadius: '12px', 
+                border: '1px solid #e5e7eb', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '12px', 
+                cursor: 'pointer',
+                transition: '0.2s',
+                boxShadow: selectedChild?._id === child._id ? '0 10px 15px -3px rgba(0,0,0,0.1)' : 'none'
+              }}
+            >
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <i className="fas fa-user-graduate"></i>
+              </div>
+              <div>
+                <h4 style={{ fontSize: '14px', fontWeight: 700 }}>{child.firstName} {child.lastName}</h4>
+                <p style={{ fontSize: '10px', opacity: 0.8 }}>{child.studentId} • {child.program}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-        <div className="panel" style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column' }}>
-          <div className="panel-header" style={{ padding: '16px 20px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>Fee Invoices</h3>
-            <button className="btn-sm" style={{ padding: '4px 10px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', color: '#374151' }}>View History</button>
-          </div>
-          <div className="list-content" style={{ padding: '20px' }}>
-            <div className="item-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '16px', marginBottom: '16px', borderBottom: '1px solid #f3f4f6' }}>
-              <div className="item-info">
-                <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#111827', marginBottom: '4px' }}>Term 2 Tuition Fee</h4>
-                <p style={{ fontSize: '12px', color: '#6b7280' }}>Due: Nov 15, 2026</p>
+      {academicData && (
+        <>
+          <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+            <div className="stat-card" style={{ background: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb', position: 'relative' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Attendance Rate</span>
+              <div style={{ fontSize: '28px', fontWeight: 800, color: '#111827', marginTop: '8px' }}>{academicData.stats.attendanceRate}%</div>
+              <div style={{ fontSize: '12px', color: academicData.stats.attendanceRate > 75 ? '#10b981' : '#f59e0b', marginTop: '4px', fontWeight: 600 }}>
+                {academicData.stats.attendanceRate > 75 ? 'Excellent Presence' : 'Attention Required'}
               </div>
-              <div className="item-status" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                <span className="badge-status" style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, background: '#fee2e2', color: '#ef4444' }}>Pending: $1,200</span>
-                <button className="btn-pay" style={{ background: '#111827', color: '#fff', border: 'none', padding: '4px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Pay Now</button>
-              </div>
+              <i className="fas fa-calendar-check" style={{ position: 'absolute', top: '24px', right: '24px', opacity: 0.1, fontSize: '24px' }}></i>
             </div>
-            <div className="item-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '16px', marginBottom: '16px', borderBottom: '1px solid #f3f4f6' }}>
-              <div className="item-info">
-                <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#111827', marginBottom: '4px' }}>Term 1 Tuition Fee</h4>
-                <p style={{ fontSize: '12px', color: '#6b7280' }}>Paid on: Aug 10, 2026</p>
-              </div>
-              <div className="item-status" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                <span className="badge-status" style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, background: '#dcfce7', color: '#10b981' }}>Paid: $1,200</span>
-              </div>
-            </div>
-            <div className="item-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div className="item-info">
-                <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#111827', marginBottom: '4px' }}>Library Fine</h4>
-                <p style={{ fontSize: '12px', color: '#6b7280' }}>Paid on: Sep 05, 2026</p>
-              </div>
-              <div className="item-status" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                <span className="badge-status" style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, background: '#dcfce7', color: '#10b981' }}>Paid: $15</span>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div className="panel" style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column' }}>
-          <div className="panel-header" style={{ padding: '16px 20px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>Recent Communications</h3>
-            <button className="btn-sm" style={{ padding: '4px 10px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', color: '#374151' }}>Contact School</button>
-          </div>
-          <div className="list-content" style={{ padding: '20px' }}>
-            <div className="notice-item" style={{ padding: '16px', borderRadius: '6px', border: '1px solid #f3f4f6', marginBottom: '16px' }}>
-              <div className="notice-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>Parent-Teacher Meeting</h4>
-                <span className="notice-date" style={{ fontSize: '10px', color: '#9ca3af' }}>Oct 20, 2026</span>
+            <div className="stat-card" style={{ background: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb', position: 'relative' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Pending Fees</span>
+              <div style={{ fontSize: '28px', fontWeight: 800, color: academicData.stats.pendingFees > 0 ? '#ef4444' : '#111827', marginTop: '8px' }}>
+                {academicData.stats.pendingFees}
               </div>
-              <div className="notice-body" style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.5 }}>
-                Dear Parents, the termly Parent-Teacher meeting is scheduled for next Friday, Oct 30th. Please book your slots through the portal.
-              </div>
+              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>Unpaid Invoices</div>
+              <i className="fas fa-file-invoice-dollar" style={{ position: 'absolute', top: '24px', right: '24px', opacity: 0.1, fontSize: '24px' }}></i>
             </div>
-            <div className="notice-item" style={{ padding: '16px', borderRadius: '6px', border: '1px solid #f3f4f6' }}>
-              <div className="notice-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>Holiday Notice</h4>
-                <span className="notice-date" style={{ fontSize: '10px', color: '#9ca3af' }}>Oct 15, 2026</span>
-              </div>
-              <div className="notice-body" style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.5 }}>
-                The college will remain closed on Monday, Oct 19th due to the public holiday. Classes will resume normally from Tuesday.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
+            <div className="stat-card" style={{ background: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb', position: 'relative' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Active Assignments</span>
+              <div style={{ fontSize: '28px', fontWeight: 800, color: '#111827', marginTop: '8px' }}>{academicData.stats.activeAssignments}</div>
+              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>Due this month</div>
+              <i className="fas fa-tasks" style={{ position: 'absolute', top: '24px', right: '24px', opacity: 0.1, fontSize: '24px' }}></i>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            {/* Recent Results */}
+            <div className="panel" style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+              <div style={{ padding: '20px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 700 }}>Academic Performance</h3>
+                <span style={{ fontSize: '12px', color: '#6b7280' }}>Latest Results</span>
+              </div>
+              <div style={{ padding: '20px' }}>
+                {academicData.results.length === 0 ? (
+                  <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: '13px' }}>No results published yet.</p>
+                ) : (
+                  academicData.results.slice(0, 5).map((res, idx) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: idx === 4 ? 'none' : '1px solid #f9fafb' }}>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: 600 }}>{res.subject}</div>
+                        <div style={{ fontSize: '11px', color: '#6b7280' }}>{res.examType}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: '#1a1a1a' }}>{res.grade}</div>
+                        <div style={{ fontSize: '11px', color: '#6b7280' }}>{res.marksObtained}/{res.totalMarks}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Recent Fees */}
+            <div className="panel" style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+              <div style={{ padding: '20px', borderBottom: '1px solid #f3f4f6' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 700 }}>Fee Status</h3>
+              </div>
+              <div style={{ padding: '20px' }}>
+                {academicData.fees.length === 0 ? (
+                  <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: '13px' }}>No fee records found.</p>
+                ) : (
+                  academicData.fees.slice(0, 5).map((fee, idx) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: idx === 4 ? 'none' : '1px solid #f9fafb' }}>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: 600 }}>{fee.feeType}</div>
+                        <div style={{ fontSize: '11px', color: '#6b7280' }}>Due: {new Date(fee.dueDate).toLocaleDateString()}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ 
+                          fontSize: '10px', 
+                          fontWeight: 700, 
+                          padding: '4px 8px', 
+                          borderRadius: '6px',
+                          background: fee.status === 'Paid' ? '#dcfce7' : '#fee2e2',
+                          color: fee.status === 'Paid' ? '#166534' : '#991b1b'
+                        }}>
+                          {fee.status === 'Paid' ? 'PAID' : `PENDING $${fee.amount - (fee.amountPaid || 0)}`}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

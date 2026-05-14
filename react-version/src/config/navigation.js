@@ -92,10 +92,12 @@ export const parentNavigation = [
   {
     title: "Parent Portal",
     links: [
-      { label: "Overview", path: "/parent/dashboard", icon: "fas fa-home" },
-      { label: "Academic Progress", path: "/parent/academic", icon: "fas fa-chart-line" },
-      { label: "Attendance Record", path: "/parent/attendance", icon: "fas fa-clipboard-check" },
-      { label: "Fee Management", path: "/parent/fees", icon: "fas fa-file-invoice-dollar" },
+      { label: "Dashboard", path: "/parent/dashboard", icon: "fas fa-home" },
+      { label: "Academic & Grades", path: "/parent/academic", icon: "fas fa-graduation-cap" },
+      { label: "Attendance", path: "/parent/attendance", icon: "fas fa-user-check" },
+      { label: "Assignments", path: "/parent/assignments", icon: "fas fa-tasks" },
+      { label: "Fee Records", path: "/parent/fees", icon: "fas fa-file-invoice-dollar" },
+      { label: "Timetable", path: "/parent/timetable", icon: "fas fa-calendar-alt" },
       { label: "Communication", path: "/parent/communication", icon: "fas fa-comments" },
       { label: "Logout", path: "/login", icon: "fas fa-sign-out-alt" }
     ]

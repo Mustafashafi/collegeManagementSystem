@@ -19,8 +19,7 @@ const UserSchema = new mongoose.Schema({
   },
   role: { 
     type: String, 
-    required: true,
-    enum: ['superadmin', 'admin', 'teacher', 'student', 'librarian', 'crm', 'parent']
+    required: true
   },
   // ✅ Added this to fix the "Deactivated" error
   isActive: {

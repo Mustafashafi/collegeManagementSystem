@@ -4,6 +4,7 @@ const Teacher = require('../models/Teacher');
 const Assignment = require('../models/Assignment');
 const Timetable = require('../models/Timetable');
 const Student = require('../models/Student');
+const checkPermission = require('../middleware/permission');
 
 // @route   GET /api/teachers/dashboard/:email
 router.get('/dashboard/:email', async (req, res) => {
@@ -77,7 +78,7 @@ const upload = require('../middleware/upload');
 
 // @route   POST /api/teachers/assignments
 // @desc    Create and broadcast assignment to students
-router.post('/assignments', upload.single('assignmentFile'), async (req, res) => {
+router.post('/assignments', checkPermission('Teacher', 'Manage Assignments'), upload.single('assignmentFile'), async (req, res) => {
   console.log(`--- BROADCASTING ASSIGNMENT ---`);
   console.log(`Title: ${req.body.title} | File: ${req.file ? req.file.originalname : 'NONE'}`);
   
@@ -167,7 +168,7 @@ router.get('/students/:program', async (req, res) => {
 
 // @route   DELETE /api/teachers/assignments/:title/:subject/:email
 // @desc    Delete assignment by title, subject and teacher email (Consolidated Delete)
-router.delete('/assignments/:title/:subject/:email', async (req, res) => {
+router.delete('/assignments/:title/:subject/:email', checkPermission('Teacher', 'Manage Assignments'), async (req, res) => {
   try {
     const { title, subject, email } = req.params;
     const teacher = await Teacher.findOne({ email });
@@ -216,7 +217,7 @@ router.put('/grade/:id', async (req, res) => {
 
 // @route   PUT /api/teachers/assignments/due-date
 // @desc    Update due date for an assignment (All students)
-router.put('/assignments/due-date', async (req, res) => {
+router.put('/assignments/due-date', checkPermission('Teacher', 'Manage Assignments'), async (req, res) => {
   try {
     const { title, subject, teacherEmail, newDueDate } = req.body;
     const teacher = await Teacher.findOne({ email: teacherEmail });

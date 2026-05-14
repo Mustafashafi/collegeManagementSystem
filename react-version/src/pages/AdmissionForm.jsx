@@ -14,7 +14,9 @@ const AdmissionForm = () => {
     previousInstitution: '',
     passingYear: '',
     marks: '',
-    program: ''
+    program: '',
+    fatherName: '',
+    parentEmail: ''
   });
   
   const [idFile, setIdFile] = useState(null);
@@ -49,9 +51,15 @@ const AdmissionForm = () => {
     setLoading(true);
 
     const submissionData = new FormData();
+    const finalPhone = formData.phone.startsWith('+92') ? formData.phone.replace('+92', '0') : formData.phone;
+    
     // Append text fields
     Object.keys(formData).forEach(key => {
-      submissionData.append(key, formData[key]);
+      if (key === 'phone') {
+        submissionData.append(key, finalPhone);
+      } else {
+        submissionData.append(key, formData[key]);
+      }
     });
     
     // Append files
@@ -72,7 +80,7 @@ const AdmissionForm = () => {
         setFormData({
           firstName: '', lastName: '', dob: '', gender: '', email: '',
           phone: '', address: '', previousInstitution: '', passingYear: '',
-          marks: '', program: ''
+          marks: '', program: '', fatherName: '', parentEmail: ''
         });
         setIdFile(null);
         setTranscriptFile(null);
@@ -143,6 +151,16 @@ const AdmissionForm = () => {
             <div style={{...styles.formGroup, gridColumn: "span 2"}}>
               <label>Residential Address</label>
               <input type="text" name="address" value={formData.address} onChange={handleChange} placeholder="Street Address, City, State, Zip Code" required style={styles.formControl}/>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label>Father's / Guardian Name</label>
+              <input type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} placeholder="Full Name" required style={styles.formControl}/>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label>Parent Email (For Portal Access)</label>
+              <input type="email" name="parentEmail" value={formData.parentEmail} onChange={handleChange} placeholder="guardian@example.com" required style={styles.formControl}/>
             </div>
           </div>
 

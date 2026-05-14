@@ -7,6 +7,7 @@ const Application = require('../models/Application');
 const User = require('../models/User');
 const Book = require('../models/Book');
 const BookRequest = require('../models/BookRequest');
+const Assignment = require('../models/Assignment');
 
 // @route   GET /api/admin/stats
 // @desc    Get dashboard statistics
@@ -189,7 +190,7 @@ router.post('/students', async (req, res) => {
     const newStudent = new Student(req.body);
     await newStudent.save();
 
-    // Create Portal Account (User)
+    // 2. Create Portal Account (User)
     const newUser = new User({
       name: `${firstName} ${lastName}`,
       email: email,
@@ -197,6 +198,23 @@ router.post('/students', async (req, res) => {
       role: 'student'
     });
     await newUser.save();
+
+    // 2.5 Create Parent Portal Account if parentEmail exists
+    if (req.body.parentEmail) {
+      const parentEmail = req.body.parentEmail.toLowerCase();
+      const existingParent = await User.findOne({ email: parentEmail });
+      
+      if (!existingParent) {
+        const newParent = new User({
+          name: req.body.fatherName || `Parent of ${firstName}`,
+          email: parentEmail,
+          password: phone, // Use student phone as default parent password too
+          role: 'parent'
+        });
+        await newParent.save();
+        console.log(`--- Parent Portal Created: ${parentEmail} ---`);
+      }
+    }
 
     // 3. Auto-assign existing assignments for this class
     const classAssignments = await Assignment.aggregate([
@@ -232,10 +250,49 @@ router.post('/students', async (req, res) => {
 });
 
 // @route   PUT /api/admin/students/:id
-// @desc    Update student record
+// @desc    Update student record + sync portals
 router.put('/students/:id', async (req, res) => {
   try {
     const student = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
+
+    // 1. Create Parent Portal Account if parentEmail is being set and doesn't exist yet
+    if (req.body.parentEmail) {
+      const parentEmail = req.body.parentEmail.toLowerCase();
+      const existingParent = await User.findOne({ email: parentEmail });
+      
+      if (!existingParent) {
+        const newParent = new User({
+          name: req.body.fatherName || `Parent of ${student.firstName}`,
+          email: parentEmail,
+          password: student.phone, // Parent password = student's phone number
+          role: 'parent'
+        });
+        await newParent.save();
+        console.log(`--- Parent Portal Created during Update: ${parentEmail} ---`);
+      }
+    }
+
+    // 2. If phone number changed, sync password for BOTH student AND parent portals
+    if (req.body.phone) {
+      // 2a. Update Student Portal password
+      const studentUser = await User.findOne({ email: student.email });
+      if (studentUser) {
+        studentUser.password = req.body.phone;
+        await studentUser.save(); // Triggers bcrypt hashing middleware
+        console.log(`--- Sync: Student password updated for ${student.email} ---`);
+      }
+
+      // 2b. Update Parent Portal password (if linked)
+      if (student.parentEmail) {
+        const parentUser = await User.findOne({ email: student.parentEmail });
+        if (parentUser) {
+          parentUser.password = req.body.phone;
+          await parentUser.save(); // Triggers bcrypt hashing middleware
+          console.log(`--- Sync: Parent password updated for ${student.parentEmail} ---`);
+        }
+      }
+    }
+
     res.json({ success: true, student });
   } catch (err) {
     res.status(500).json({ success: false, msg: err.message });

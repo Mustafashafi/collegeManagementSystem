@@ -1,92 +1,139 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { adminApi } from '../services/api';
+import toast from 'react-hot-toast';
+import { API_BASE_URL } from '../config/api';
 
 const CRMAddApplication = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    firstName: '', lastName: '', dob: '', gender: 'Male',
+    email: '', phone: '', address: '', previousInstitution: '',
+    passingYear: '', marks: '', program: '', fatherName: '', parentEmail: ''
+  });
+  const [programs, setPrograms] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchPrograms = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/public/programs`);
+        const data = await response.json();
+        setPrograms(data);
+      } catch (err) {
+        console.error('Error fetching programs:', err);
+      }
+    };
+    fetchPrograms();
+  }, []);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    // Normalize phone number: replace +92 with 0
+    const finalPhone = formData.phone.startsWith('+92') ? formData.phone.replace('+92', '0') : formData.phone;
+    const submissionData = new FormData();
+    Object.keys(formData).forEach(key => {
+      if (key === 'phone') {
+        submissionData.append(key, finalPhone);
+      } else {
+        submissionData.append(key, formData[key]);
+      }
+    });
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/applications`, {
+        method: 'POST',
+        body: submissionData
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success("Application created successfully!");
+        navigate('/crm/applications');
+      } else {
+        toast.error(data.msg || "Failed to create application");
+      }
+    } catch (err) {
+      toast.error("Network error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="dashboard-content">
       <div className="page-header" style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <a href="/crm/applications" className="btn-back" style={{ width: '36px', height: '36px', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-main)', textDecoration: 'none' }}>
+        <button onClick={() => navigate('/crm/applications')} className="btn-back" style={{ background: 'none', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-main)' }}>
           <i className="fas fa-arrow-left"></i>
-        </a>
-        <h1 style={{ fontSize: '24px', fontWeight: 700, margin: 0 }}>Manual Application Entry (Admission Form)</h1>
+        </button>
+        <h1 style={{ fontSize: '24px', fontWeight: 700, margin: 0 }}>Manual Application Entry</h1>
       </div>
 
       <div className="form-card" style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '12px', padding: '30px', maxWidth: '900px' }}>
-        <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
+        <form className="form-grid" onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
           <h4 className="section-subtitle" style={{ gridColumn: 'span 2', fontSize: '14px', fontWeight: 700, margin: '10px 0', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9', color: 'var(--primary)' }}>Personal Details</h4>
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-main)' }}>Applicant Full Name</label>
-            <input type="text" className="form-control" placeholder="e.g. Emily Smith" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+          <div className="form-group">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>First Name</label>
+            <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} required className="form-control" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px' }} />
           </div>
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-main)' }}>Date of Birth</label>
-            <input type="date" className="form-control" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+          <div className="form-group">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>Last Name</label>
+            <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} required className="form-control" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px' }} />
           </div>
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-main)' }}>Gender</label>
-            <select className="form-control" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}>
+          <div className="form-group">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>Date of Birth</label>
+            <input type="date" name="dob" value={formData.dob} onChange={handleChange} required className="form-control" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px' }} />
+          </div>
+          <div className="form-group">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>Gender</label>
+            <select name="gender" value={formData.gender} onChange={handleChange} className="form-control" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px' }}>
               <option>Male</option>
               <option>Female</option>
               <option>Other</option>
             </select>
           </div>
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-main)' }}>Email Address</label>
-            <input type="email" className="form-control" placeholder="emily@example.com" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+          <div className="form-group">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>Email Address</label>
+            <input type="email" name="email" value={formData.email} onChange={handleChange} required className="form-control" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px' }} />
           </div>
-          <div className="form-group full" style={{ gridColumn: 'span 2', marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-main)' }}>Complete Address</label>
-            <input type="text" className="form-control" placeholder="123 Main St, City, Country" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+          <div className="form-group">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>Phone Number</label>
+            <input type="tel" name="phone" value={formData.phone} onChange={handleChange} required className="form-control" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px' }} />
           </div>
 
           <h4 className="section-subtitle" style={{ gridColumn: 'span 2', fontSize: '14px', fontWeight: 700, margin: '10px 0', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9', color: 'var(--primary)' }}>Parent / Guardian Details</h4>
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-main)' }}>Guardian Name</label>
-            <input type="text" className="form-control" placeholder="John Smith" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+          <div className="form-group">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>Father's Name</label>
+            <input type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} required className="form-control" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px' }} />
           </div>
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-main)' }}>Guardian Phone</label>
-            <input type="tel" className="form-control" placeholder="+1 234 567 8900" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+          <div className="form-group">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>Parent Email</label>
+            <input type="email" name="parentEmail" value={formData.parentEmail} onChange={handleChange} required className="form-control" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px' }} />
           </div>
 
-          <h4 className="section-subtitle" style={{ gridColumn: 'span 2', fontSize: '14px', fontWeight: 700, margin: '10px 0', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9', color: 'var(--primary)' }}>Academic Details & Program Selection</h4>
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-main)' }}>Previous School / Institution</label>
-            <input type="text" className="form-control" placeholder="Lincoln High School" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
-          </div>
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-main)' }}>High School Passing Year & Marks</label>
-            <input type="text" className="form-control" placeholder="2023 - 85%" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
-          </div>
-          <div className="form-group full" style={{ gridColumn: 'span 2', marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-main)' }}>Applying For (Program)</label>
-            <select className="form-control" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}>
-              <option>Select Program...</option>
-              <option>B.Sc Computer Science</option>
-              <option>Business Administration</option>
-              <option>Engineering (Mechanical)</option>
+          <h4 className="section-subtitle" style={{ gridColumn: 'span 2', fontSize: '14px', fontWeight: 700, margin: '10px 0', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9', color: 'var(--primary)' }}>Program Selection</h4>
+          <div className="form-group" style={{ gridColumn: 'span 2' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>Applying For</label>
+            <select name="program" value={formData.program} onChange={handleChange} required className="form-control" style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px' }}>
+              <option value="">Select Program...</option>
+              {programs.map(p => (
+                <option key={p._id} value={p.name}>{p.name} ({p.year})</option>
+              ))}
             </select>
           </div>
 
-          <h4 className="section-subtitle" style={{ gridColumn: 'span 2', fontSize: '14px', fontWeight: 700, margin: '10px 0', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9', color: 'var(--primary)' }}>Document Uploads</h4>
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-main)' }}>ID Card / Passport</label>
-            <div className="file-upload" style={{ border: '2px dashed var(--border)', padding: '20px', textAlign: 'center', borderRadius: '8px', background: '#f8fafc', cursor: 'pointer' }}>
-              <i className="fas fa-id-card" style={{ fontSize: '24px', color: 'var(--text-muted)', marginBottom: '10px' }}></i>
-              <p>Click to upload ID</p>
-            </div>
+          <div className="form-footer" style={{ gridColumn: 'span 2', marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '20px', borderTop: '1px solid #f1f5f9' }}>
+            <button type="button" className="btn-cancel" onClick={() => navigate('/crm/applications')} style={{ padding: '12px 24px', background: '#fff', border: '1px solid var(--border)', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+            <button type="submit" className="btn-submit" disabled={loading} style={{ padding: '12px 24px', background: 'var(--primary)', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', color: '#fff' }}>
+              {loading ? 'Creating...' : 'Create Application'}
+            </button>
           </div>
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-main)' }}>Academic Transcripts</label>
-            <div className="file-upload" style={{ border: '2px dashed var(--border)', padding: '20px', textAlign: 'center', borderRadius: '8px', background: '#f8fafc', cursor: 'pointer' }}>
-              <i className="fas fa-file-alt" style={{ fontSize: '24px', color: 'var(--text-muted)', marginBottom: '10px' }}></i>
-              <p>Click to upload certificates</p>
-            </div>
-          </div>
-        </div>
-        <div className="form-footer" style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '20px', borderTop: '1px solid #f1f5f9' }}>
-          <button className="btn-cancel" onClick={() => window.location.href='/crm/applications'} style={{ padding: '12px 24px', background: '#fff', border: '1px solid var(--border)', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', color: 'var(--text-main)' }}>Cancel</button>
-          <button className="btn-submit" style={{ padding: '12px 24px', background: 'var(--primary)', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', color: '#fff' }}>Submit Application</button>
-        </div>
+        </form>
       </div>
     </div>
   );

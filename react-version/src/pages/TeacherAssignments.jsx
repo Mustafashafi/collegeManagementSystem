@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import TeacherLayout from '../components/TeacherLayout';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config/api';
+import { authApi } from '../services/api';
 import toast from 'react-hot-toast';
 
 const TeacherAssignments = () => {
@@ -11,10 +12,20 @@ const TeacherAssignments = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const [editingKey, setEditingKey] = useState(null);
   const [tempDate, setTempDate] = useState('');
+  const [canManage, setCanManage] = useState(true);
 
   useEffect(() => {
     const fetchAssignments = async () => {
       try {
+        // Check Permissions
+        const permRes = await authApi.getPermissions('teacher');
+        if (permRes.data.success) {
+          const managePerm = permRes.data.permissions.find(p => p.name === 'Manage Assignments');
+          if (managePerm && !managePerm.enabled) {
+            setCanManage(false);
+          }
+        }
+
         const response = await fetch(`${API_BASE_URL}/api/teachers/assignments-all/${user.email}`);
         const result = await response.json();
         if (response.ok) {
@@ -96,8 +107,14 @@ const TeacherAssignments = () => {
           <h1>Manage Assignments</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>Create, track, and grade assignments for your classes.</p>
         </div>
-        <button className="btn-primary" onClick={() => navigate('/teacher/add-assignment')}>
-          <i className="fas fa-plus" style={{ marginRight: '8px' }}></i> Create Assignment
+        <button 
+          className="btn-primary" 
+          onClick={() => navigate('/teacher/add-assignment')}
+          disabled={!canManage}
+          style={!canManage ? { opacity: 0.5, cursor: 'not-allowed', background: '#9ca3af' } : {}}
+        >
+          <i className={!canManage ? "fas fa-lock" : "fas fa-plus"} style={{ marginRight: '8px' }}></i> 
+          {!canManage ? 'Creation Disabled' : 'Create Assignment'}
         </button>
       </div>
 
@@ -123,10 +140,11 @@ const TeacherAssignments = () => {
                   <td>{asgn.subject}</td>
                   <td 
                     onClick={() => {
+                      if (!canManage) return;
                       setEditingKey(asgn.key);
                       setTempDate(new Date(asgn.dueDate).toISOString().split('T')[0]);
                     }}
-                    style={{ cursor: 'pointer', position: 'relative' }}
+                    style={{ cursor: canManage ? 'pointer' : 'default', position: 'relative' }}
                   >
                     {editingKey === asgn.key ? (
                       <input 
@@ -142,9 +160,9 @@ const TeacherAssignments = () => {
                         style={{ padding: '4px', borderRadius: '4px', border: '1px solid var(--primary)', fontSize: '13px' }}
                       />
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 600 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: canManage ? 'var(--primary)' : 'inherit', fontWeight: 600 }}>
                         {new Date(asgn.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        <i className="fas fa-edit" style={{ fontSize: '10px', opacity: 0.5 }}></i>
+                        {canManage && <i className="fas fa-edit" style={{ fontSize: '10px', opacity: 0.5 }}></i>}
                       </div>
                     )}
                   </td>
@@ -168,9 +186,16 @@ const TeacherAssignments = () => {
                       <button 
                         className="btn-sm" 
                         onClick={() => handleDelete(asgn.title, asgn.subject)}
-                        style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca' }}
+                        disabled={!canManage}
+                        style={{ 
+                          background: '#fee2e2', 
+                          color: '#b91c1c', 
+                          border: '1px solid #fecaca',
+                          opacity: canManage ? 1 : 0.5,
+                          cursor: canManage ? 'pointer' : 'not-allowed'
+                        }}
                       >
-                        <i className="fas fa-trash"></i>
+                        <i className={!canManage ? "fas fa-lock" : "fas fa-trash"}></i>
                       </button>
                     </div>
                   </td>

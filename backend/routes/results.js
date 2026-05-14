@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const Result = require('../models/Result');
+const checkPermission = require('../middleware/permission');
 
 // @route   POST /api/results/bulk
 // @desc    Save multiple result records
-router.post('/bulk', async (req, res) => {
+router.post('/bulk', checkPermission('Teacher', 'Upload Results'), async (req, res) => {
   try {
     const { records } = req.body;
     if (!records || !Array.isArray(records)) {

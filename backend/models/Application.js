@@ -13,6 +13,8 @@ const ApplicationSchema = new mongoose.Schema({
   passingYear: { type: String, required: true },
   marks: { type: String, required: true },
   program: { type: String, required: true },
+  fatherName: { type: String },
+  parentEmail: { type: String, lowercase: true, trim: true },
   idDocument: { type: String }, // Path to file
   transcriptDocument: { type: String }, // Path to file
   status: { type: String, default: 'Submitted' },

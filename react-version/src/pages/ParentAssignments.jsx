@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { parentApi } from '../services/api';
 import toast from 'react-hot-toast';
 
-const ParentAttendance = () => {
+const ParentAssignments = () => {
   const [children, setChildren] = useState([]);
   const [selectedChild, setSelectedChild] = useState(null);
-  const [attendance, setAttendance] = useState([]);
+  const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -26,16 +26,16 @@ const ParentAttendance = () => {
   }, [user.email]);
 
   useEffect(() => {
-    const fetchAttendance = async () => {
+    const fetchAssignments = async () => {
       if (!selectedChild) return;
       try {
         const response = await parentApi.getStudent360(selectedChild.studentId);
-        setAttendance(response.data.attendance || []);
+        setAssignments(response.data.assignments || []);
       } catch (err) {
-        toast.error("Failed to load attendance logs");
+        toast.error("Failed to load assignments");
       }
     };
-    fetchAttendance();
+    fetchAssignments();
   }, [selectedChild]);
 
   if (loading) return <div className="dashboard-content" style={{ textAlign: 'center', padding: '50px' }}><i className="fas fa-spinner fa-spin"></i></div>;
@@ -43,8 +43,8 @@ const ParentAttendance = () => {
   return (
     <div className="dashboard-content">
       <div className="page-header" style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Attendance Logs</h1>
-        <p style={{ color: '#6b7280', fontSize: '13px' }}>Monitor daily presence and leave records.</p>
+        <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Assignments Tracking</h1>
+        <p style={{ color: '#6b7280', fontSize: '13px' }}>Monitor homework and project submissions.</p>
       </div>
 
       <div style={{ marginBottom: '24px', display: 'flex', gap: '10px' }}>
@@ -71,28 +71,30 @@ const ParentAttendance = () => {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Date</th>
+                <th>Assignment Title</th>
                 <th>Subject</th>
+                <th>Due Date</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {attendance.length === 0 ? (
-                <tr><td colSpan="3" style={{ textAlign: 'center', padding: '30px' }}>No attendance records found.</td></tr>
-              ) : attendance.map((record, idx) => (
+              {assignments.length === 0 ? (
+                <tr><td colSpan="4" style={{ textAlign: 'center', padding: '30px' }}>No assignments found.</td></tr>
+              ) : assignments.map((asgn, idx) => (
                 <tr key={idx}>
-                  <td>{new Date(record.date).toLocaleDateString()}</td>
-                  <td>{record.subject}</td>
+                  <td><strong>{asgn.title}</strong></td>
+                  <td>{asgn.subject}</td>
+                  <td>{new Date(asgn.dueDate).toLocaleDateString()}</td>
                   <td>
                     <span style={{ 
                       padding: '4px 8px', 
                       borderRadius: '6px', 
                       fontSize: '11px', 
                       fontWeight: 700,
-                      background: record.status === 'Present' ? '#dcfce7' : '#fee2e2',
-                      color: record.status === 'Present' ? '#166534' : '#991b1b'
+                      background: asgn.status === 'Submitted' ? '#dcfce7' : '#fee2e2',
+                      color: asgn.status === 'Submitted' ? '#166534' : '#991b1b'
                     }}>
-                      {record.status}
+                      {asgn.status}
                     </span>
                   </td>
                 </tr>
@@ -105,4 +107,4 @@ const ParentAttendance = () => {
   );
 };
 
-export default ParentAttendance;
+export default ParentAssignments;

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Book = require('../models/Book');
 const BookRequest = require('../models/BookRequest');
+const checkPermission = require('../middleware/permission');
 
 // @route   GET /api/library/stats
 router.get('/stats', async (req, res) => {
@@ -45,7 +46,7 @@ router.get('/books', async (req, res) => {
 });
 
 // @route   POST /api/library/books
-router.post('/books', async (req, res) => {
+router.post('/books', checkPermission('Librarian', 'Manage Books'), async (req, res) => {
   try {
     const { title, author, isbn, category, totalCopies, location } = req.body;
     const book = new Book({
@@ -71,7 +72,7 @@ router.get('/requests', async (req, res) => {
 });
 
 // @route   PUT /api/library/requests/:id
-router.put('/requests/:id', async (req, res) => {
+router.put('/requests/:id', checkPermission('Librarian', 'Issue Books'), async (req, res) => {
   try {
     const { status, dueDate } = req.body;
     const request = await BookRequest.findById(req.params.id);
@@ -118,7 +119,7 @@ router.get('/records', async (req, res) => {
 });
 
 // @route   POST /api/library/request
-router.post('/request', async (req, res) => {
+router.post('/request', checkPermission('Student', 'Access Library'), async (req, res) => {
   try {
     const { bookId, userId, userName, userRole } = req.body;
     let { studentId } = req.body;

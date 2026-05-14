@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TeacherLayout from '../components/TeacherLayout';
 import { API_BASE_URL } from '../config/api';
+import { authApi } from '../services/api';
 import toast from 'react-hot-toast';
 
 const TeacherResults = () => {
@@ -13,11 +14,21 @@ const TeacherResults = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [hasPublishedGrades, setHasPublishedGrades] = useState(false);
+  const [canUpload, setCanUpload] = useState(true);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
     const fetchTeacher = async () => {
       try {
+        // Check Permissions
+        const permRes = await authApi.getPermissions('teacher');
+        if (permRes.data.success) {
+          const uploadPerm = permRes.data.permissions.find(p => p.name === 'Upload Results');
+          if (uploadPerm && !uploadPerm.enabled) {
+            setCanUpload(false);
+          }
+        }
+
         const response = await fetch(`${API_BASE_URL}/api/teachers/dashboard/${user.email}`);
         const data = await response.json();
         if (response.ok) {
@@ -153,8 +164,14 @@ const TeacherResults = () => {
           <h1>Manage Results & Grades</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>Enter exam scores and generate result sheets.</p>
         </div>
-        <button className="btn-primary" onClick={publishGrades} disabled={isSaving}>
-          <i className="fas fa-save" style={{ marginRight: '8px' }}></i> {isSaving ? 'Saving...' : (hasPublishedGrades ? 'Update Grades' : 'Publish Grades')}
+        <button 
+          className="btn-primary" 
+          onClick={publishGrades} 
+          disabled={isSaving || !canUpload}
+          style={!canUpload ? { opacity: 0.5, cursor: 'not-allowed', background: '#9ca3af' } : {}}
+        >
+          <i className={!canUpload ? "fas fa-lock" : "fas fa-save"} style={{ marginRight: '8px' }}></i> 
+          {!canUpload ? 'Uploading Disabled' : (isSaving ? 'Saving...' : (hasPublishedGrades ? 'Update Grades' : 'Publish Grades'))}
         </button>
       </div>
 
@@ -221,7 +238,18 @@ const TeacherResults = () => {
                     value={resultsData[s.email]?.marks}
                     onChange={(e) => handleMarksChange(s.email, e.target.value)}
                     className="grade-input"
-                    style={{ width: '80px', padding: '8px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '13px', textAlign: 'center', outline: 'none' }}
+                    disabled={!canUpload}
+                    style={{ 
+                      width: '80px', 
+                      padding: '8px', 
+                      border: '1px solid var(--border)', 
+                      borderRadius: '6px', 
+                      fontSize: '13px', 
+                      textAlign: 'center', 
+                      outline: 'none',
+                      background: !canUpload ? '#f3f4f6' : '#fff',
+                      cursor: !canUpload ? 'not-allowed' : 'text'
+                    }}
                   />
                 </td>
                 <td><strong>{calculateGrade(resultsData[s.email]?.marks || 0)}</strong></td>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import TeacherLayout from '../components/TeacherLayout';
 import { useLocation } from 'react-router-dom';
 import { API_BASE_URL } from '../config/api';
+import { authApi } from '../services/api';
 import toast from 'react-hot-toast';
 
 const TeacherAttendance = () => {
@@ -14,11 +15,21 @@ const TeacherAttendance = () => {
   const [attendanceData, setAttendanceData] = useState({});
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [canMark, setCanMark] = useState(true);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
     const fetchTeacher = async () => {
       try {
+        // Check Permissions
+        const permRes = await authApi.getPermissions('teacher');
+        if (permRes.data.success) {
+          const markPerm = permRes.data.permissions.find(p => p.name === 'Mark Attendance');
+          if (markPerm && !markPerm.enabled) {
+            setCanMark(false);
+          }
+        }
+
         const response = await fetch(`${API_BASE_URL}/api/teachers/dashboard/${user.email}`);
         const data = await response.json();
         if (response.ok) {
@@ -115,8 +126,14 @@ const TeacherAttendance = () => {
           <h1>Mark Attendance</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>Record daily attendance for your assigned classes.</p>
         </div>
-        <button className="btn-primary" onClick={saveAttendance} disabled={isSaving}>
-          <i className="fas fa-save" style={{ marginRight: '8px' }}></i> {isSaving ? 'Saving...' : 'Save Attendance'}
+        <button 
+          className="btn-primary" 
+          onClick={saveAttendance} 
+          disabled={isSaving || !canMark}
+          style={!canMark ? { opacity: 0.5, cursor: 'not-allowed', background: '#9ca3af' } : {}}
+        >
+          <i className={!canMark ? "fas fa-lock" : "fas fa-save"} style={{ marginRight: '8px' }}></i> 
+          {!canMark ? 'Attendance Disabled' : (isSaving ? 'Saving...' : 'Save Attendance')}
         </button>
       </div>
 

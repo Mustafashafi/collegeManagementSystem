@@ -24,10 +24,16 @@ const StudentDashboard = () => {
         ]);
 
         const profileData = await profileRes.json();
-        const feesData = await feesRes.json();
-        const attData = await attRes.json();
-        const asgnData = await asgnRes.json();
-        const resData = await resRes.json();
+        let feesData = await feesRes.json();
+        let attData = await attRes.json();
+        let asgnData = await asgnRes.json();
+        let resData = await resRes.json();
+
+        // Fallback to empty arrays if RBAC denied access (non-array response)
+        if (!Array.isArray(feesData)) feesData = [];
+        if (!Array.isArray(attData)) attData = [];
+        if (!Array.isArray(asgnData)) asgnData = [];
+        if (!Array.isArray(resData)) resData = [];
 
         const seenResults = new Set();
         const uniqueResults = [];

@@ -11,7 +11,8 @@ const StudentAttendance = () => {
     const fetchAttendance = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/students/attendance/${user.email}`);
-        const data = await response.json();
+        let data = await response.json();
+        if (!Array.isArray(data)) data = [];
         setAttendance(data);
       } catch (err) {
         console.error('Error fetching attendance:', err);

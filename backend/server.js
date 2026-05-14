@@ -49,6 +49,7 @@ app.use('/api/events', require('./routes/events'));
 app.use('/api/results', require('./routes/results'));
 app.use('/api/library', require('./routes/library'));
 app.use('/api/public', require('./routes/public'));
+app.use('/api/parents', require('./routes/parents'));
 
 // 404 Logger
 app.use((req, res, next) => {

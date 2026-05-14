@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const Attendance = require('../models/Attendance');
+const checkPermission = require('../middleware/permission');
 
 // @route   POST /api/attendance/bulk
 // @desc    Save multiple attendance records
-router.post('/bulk', async (req, res) => {
+router.post('/bulk', checkPermission('Teacher', 'Mark Attendance'), async (req, res) => {
   try {
     const { records } = req.body;
     if (!records || !Array.isArray(records)) {

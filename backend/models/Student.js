@@ -16,6 +16,8 @@ const StudentSchema = new mongoose.Schema({
   batch: { type: String },
   year: { type: String, default: '1st Year' },
   secondarySubjects: [{ type: String }],
+  fatherName: { type: String },
+  parentEmail: { type: String, lowercase: true, trim: true },
   applicationRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Application' }
 });
 

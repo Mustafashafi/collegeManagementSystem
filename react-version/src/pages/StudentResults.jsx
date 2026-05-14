@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { API_BASE_URL } from '../config/api';
+import { authApi } from '../services/api';
 
 const StudentResults = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [canView, setCanView] = useState(true);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   const [timetable, setTimetable] = useState([]);
@@ -12,13 +14,27 @@ const StudentResults = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Check Permissions
+        const permRes = await authApi.getPermissions('student');
+        if (permRes.data.success) {
+          const resultsPerm = permRes.data.permissions.find(p => p.name === 'View Results');
+          if (resultsPerm && !resultsPerm.enabled) {
+            setCanView(false);
+            setLoading(false);
+            return;
+          }
+        }
+
         const [resRes, profileRes] = await Promise.all([
           fetch(`${API_BASE_URL}/api/students/results/${user.email}`),
           fetch(`${API_BASE_URL}/api/students/profile/${user.email}`)
         ]);
         
-        const resData = await resRes.json();
+        let resData = await resRes.json();
         const profileData = await profileRes.json();
+        
+        // Defensive check for non-array responses (RBAC denial)
+        if (!Array.isArray(resData)) resData = [];
         
         // Deduplicate results keeping only the latest per subject + examType
         // (backend sorts by date: -1 so the first seen is the latest)
@@ -66,6 +82,22 @@ const StudentResults = () => {
   const gpa = (uniqueEnrolledSubjects > 0 && uniqueGradedSubjects >= uniqueEnrolledSubjects) 
     ? (totalPoints / results.length).toFixed(2) 
     : 'Pending';
+
+  if (!canView) {
+    return (
+      <div className="dashboard-content">
+        <div style={{ textAlign: 'center', padding: '100px 20px', background: '#fff', borderRadius: '16px', border: '1px solid #fee2e2' }}>
+          <div style={{ width: '80px', height: '80px', background: '#fef2f2', color: '#dc2626', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', margin: '0 auto 24px' }}>
+            <i className="fas fa-lock"></i>
+          </div>
+          <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#111827', marginBottom: '12px' }}>Access Restricted</h2>
+          <p style={{ color: '#6b7280', maxWidth: '400px', margin: '0 auto' }}>
+            The viewing of exam results has been temporarily disabled by the administration. Please contact the registrar's office for more information.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-content">

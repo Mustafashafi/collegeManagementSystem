@@ -14,7 +14,7 @@ const AdminAddStudent = () => {
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', dob: '', gender: 'Male',
     email: '', phone: '', studentId: '', program: '',
-    year: '1st Year'
+    year: '1st Year', fatherName: '', parentEmail: ''
   });
 
   // Set default program once filters are loaded
@@ -41,7 +41,12 @@ const AdminAddStudent = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    mutation.mutate(formData);
+    // Normalize phone number: replace +92 with 0
+    const normalizedData = {
+      ...formData,
+      phone: formData.phone.startsWith('+92') ? formData.phone.replace('+92', '0') : formData.phone
+    };
+    mutation.mutate(normalizedData);
   };
 
   return (
@@ -105,6 +110,16 @@ const AdminAddStudent = () => {
               <option>3rd Year</option>
               <option>4th Year</option>
             </select>
+          </div>
+
+          <h4 className="section-subtitle">Parent / Guardian Details</h4>
+          <div className="form-group">
+            <label>Father's / Guardian Name</label>
+            <input type="text" name="fatherName" className="form-control" value={formData.fatherName} onChange={handleChange} placeholder="Full Name" />
+          </div>
+          <div className="form-group">
+            <label>Parent Email (For Portal Access)</label>
+            <input type="email" name="parentEmail" className="form-control" value={formData.parentEmail} onChange={handleChange} placeholder="guardian@example.com" />
           </div>
 
           <div className="form-footer" style={{ gridColumn: 'span 2', marginTop: '20px' }}>
