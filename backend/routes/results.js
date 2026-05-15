@@ -12,21 +12,24 @@ router.post('/bulk', checkPermission('Teacher', 'Upload Results'), async (req, r
       return res.status(400).json({ msg: 'Invalid records format' });
     }
 
-    // Optional: Delete existing records for the same exam/subject/program to avoid duplicates
-    const { examType, subject, program } = records[0];
-    
-    // Only delete if we have all necessary identifiers, else fallback to just examType and subject
-    let deleteQuery = { examType, subject };
-    if (program) {
-        deleteQuery.program = program;
-    }
-    await Result.deleteMany(deleteQuery);
+    // Use bulkWrite for atomic upserts to prevent duplicates and ensure updates
+    const bulkOps = records.map(record => ({
+      updateOne: {
+        filter: { 
+          studentEmail: record.studentEmail, 
+          subject: record.subject, 
+          examType: record.examType 
+        },
+        update: { $set: record },
+        upsert: true
+      }
+    }));
 
-    await Result.insertMany(records);
+    await Result.bulkWrite(bulkOps);
 
     res.json({ success: true, count: records.length });
   } catch (err) {
-    console.error(err.message);
+    console.error('Bulk Result Error:', err.message);
     res.status(500).send('Server Error');
   }
 });
