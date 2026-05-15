@@ -14,6 +14,7 @@ const Assignment = require('../models/Assignment');
 router.get('/stats', async (req, res) => {
   try {
     const totalStudents = await Student.countDocuments();
+    const totalParents = await User.countDocuments({ role: 'parent' });
     const totalTeachers = await Teacher.countDocuments();
     const newInquiries = await Application.countDocuments({
       appliedDate: {
@@ -34,6 +35,7 @@ router.get('/stats', async (req, res) => {
 
     res.json({
       totalStudents,
+      totalParents,
       totalTeachers,
       newInquiries,
       feesCollected: feesCollected.length > 0 ? feesCollected[0].total : 0,
@@ -70,7 +72,7 @@ router.get('/students', async (req, res) => {
     const students = await Student.find(query)
       .limit(limit * 1)
       .skip((page - 1) * limit)
-      .sort({ createdAt: -1 });
+      .sort({ studentId: 1 });
 
     const count = await Student.countDocuments(query);
 

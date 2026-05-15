@@ -15,6 +15,7 @@ const AdminDashboard = () => {
 
   const stats = statsLoading ? [] : [
     { label: "Total Students", value: statsData?.totalStudents || 0, icon: "fas fa-user-graduate", bgColor: "#eff6ff", iconColor: "#3b82f6" },
+    { label: "Total Parents", value: statsData?.totalParents || 0, icon: "fas fa-user-friends", bgColor: "#fffbeb", iconColor: "#d97706" },
     { label: "Total Teachers", value: statsData?.totalTeachers || 0, icon: "fas fa-chalkboard-teacher", bgColor: "#ecfdf5", iconColor: "#10b981" },
     { label: "New Inquiries (This Month)", value: statsData?.newInquiries || 0, icon: "fas fa-user-plus", bgColor: "#f5f3ff", iconColor: "#8b5cf6" },
     { label: "Fees Collected", value: `$${(statsData?.feesCollected / 1000).toFixed(1)}k`, icon: "fas fa-file-invoice-dollar", bgColor: "#fff7ed", iconColor: "#f97316" },
