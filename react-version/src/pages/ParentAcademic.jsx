@@ -34,7 +34,7 @@ const ParentAcademic = () => {
           parentApi.getStudent360(selectedChild.studentId),
           studentApi.getTimetable(selectedChild.program, selectedChild.year)
         ]);
-        
+
         setResults(resResponse.data.results || []);
         setTimetable(ttResponse.data || []);
       } catch (err) {
@@ -48,11 +48,26 @@ const ParentAcademic = () => {
   const uniqueEnrolledSubjects = new Set(timetable.map(t => t.subject)).size;
   const uniqueGradedSubjects = new Set(results.map(r => r.subject)).size;
 
+  const subjectExams = {};
+  results.forEach(r => {
+    if (!subjectExams[r.subject]) subjectExams[r.subject] = new Set();
+    const type = r.examType.toLowerCase();
+    if (type.includes('mid')) subjectExams[r.subject].add('mid');
+    if (type.includes('final')) subjectExams[r.subject].add('final');
+  });
+
+  let fullyGradedSubjects = 0;
+  for (const subject in subjectExams) {
+    if (subjectExams[subject].has('mid') && subjectExams[subject].has('final')) {
+      fullyGradedSubjects++;
+    }
+  }
+
   const gradePoints = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
   const totalPoints = results.reduce((acc, r) => acc + (gradePoints[r.grade] || 0), 0);
-  
-  const gpa = (uniqueEnrolledSubjects > 0 && uniqueGradedSubjects >= uniqueEnrolledSubjects) 
-    ? (totalPoints / results.length).toFixed(2) 
+
+  const gpa = (uniqueEnrolledSubjects > 0 && fullyGradedSubjects >= uniqueEnrolledSubjects)
+    ? (totalPoints / results.length).toFixed(2)
     : 'Pending';
 
   if (loading) return <div className="dashboard-content" style={{ textAlign: 'center', padding: '100px' }}><i className="fas fa-spinner fa-spin"></i></div>;
@@ -66,12 +81,12 @@ const ParentAcademic = () => {
 
       <div style={{ marginBottom: '30px', display: 'flex', gap: '12px' }}>
         {children.map(child => (
-          <button 
-            key={child._id} 
+          <button
+            key={child._id}
             onClick={() => setSelectedChild(child)}
-            style={{ 
-              padding: '10px 24px', 
-              borderRadius: '30px', 
+            style={{
+              padding: '10px 24px',
+              borderRadius: '30px',
               background: selectedChild?._id === child._id ? 'var(--primary)' : '#fff',
               color: selectedChild?._id === child._id ? '#fff' : '#1a1a1a',
               border: '1px solid #e5e7eb',
@@ -116,8 +131,8 @@ const ParentAcademic = () => {
                   <td style={{ padding: '16px 24px', fontSize: '14px', color: '#64748b', borderBottom: '1px solid #f3f4f6' }}>{res.examType}</td>
                   <td style={{ padding: '16px 24px', fontSize: '14px', borderBottom: '1px solid #f3f4f6' }}>{res.marksObtained} <span style={{ color: '#9ca3af', fontSize: '12px' }}>/ {res.totalMarks}</span></td>
                   <td style={{ padding: '16px 24px', fontSize: '14px', borderBottom: '1px solid #f3f4f6' }}>
-                    <span style={{ 
-                      fontWeight: 800, 
+                    <span style={{
+                      fontWeight: 800,
                       color: res.grade === 'F' ? '#ef4444' : '#111827',
                       background: res.grade === 'F' ? '#fef2f2' : '#f8fafc',
                       padding: '4px 10px',
@@ -148,7 +163,7 @@ const ParentAcademic = () => {
             <div style={{ textAlign: 'right' }}>
               <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--primary)', marginBottom: '4px' }}>Institutional Honors Status</p>
               <p style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>
-                {parseFloat(gpa) >= 3.5 ? '✨ Distinction List' : parseFloat(gpa) >= 3.0 ? '✓ Satisfactory' : 'Under Review'}
+                {parseFloat(gpa) >= 3.5 ? '✨ Distinction List' : parseFloat(gpa) >= 3.0 ? '✓ Satisfactory' : parseFloat(gpa) >= 2.5 ? 'Good Standing' : '⚠️ Needs Improvement'}
               </p>
             </div>
           </div>

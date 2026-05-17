@@ -77,14 +77,29 @@ const StudentDashboard = () => {
   // Pending Assignments calculation
   const pendingAssignmentsCount = assignments.filter(a => a.status === 'Pending' && new Date(a.dueDate).setHours(23, 59, 59, 999) >= new Date()).length;
 
-  // GPA calculation (Only calculate if all enrolled subjects have grades)
+  // GPA calculation (Only calculate if all enrolled subjects have both mid and final grades)
   const uniqueEnrolledSubjects = new Set(timetable.map(t => t.subject)).size;
   const uniqueGradedSubjects = new Set(results.map(r => r.subject)).size;
 
-  const gradePoints = { 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
+  const subjectExams = {};
+  results.forEach(r => {
+    if (!subjectExams[r.subject]) subjectExams[r.subject] = new Set();
+    const type = r.examType.toLowerCase();
+    if (type.includes('mid')) subjectExams[r.subject].add('mid');
+    if (type.includes('final')) subjectExams[r.subject].add('final');
+  });
+
+  let fullyGradedSubjects = 0;
+  for (const subject in subjectExams) {
+    if (subjectExams[subject].has('mid') && subjectExams[subject].has('final')) {
+      fullyGradedSubjects++;
+    }
+  }
+
+  const gradePoints = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
   const totalPoints = results.reduce((acc, r) => acc + (gradePoints[r.grade] || 0), 0);
 
-  const gpa = (uniqueEnrolledSubjects > 0 && uniqueGradedSubjects >= uniqueEnrolledSubjects)
+  const gpa = (uniqueEnrolledSubjects > 0 && fullyGradedSubjects >= uniqueEnrolledSubjects)
     ? (totalPoints / results.length).toFixed(2)
     : 'Pending';
 
