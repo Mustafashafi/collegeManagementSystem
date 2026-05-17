@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../services/api';
+import { API_BASE_URL } from '../config/api';
 import toast from 'react-hot-toast';
 
 const AdminFees = () => {
@@ -334,10 +335,10 @@ const AdminFees = () => {
               <div style={{ marginBottom: '20px', textAlign: 'center', border: '1px solid #e5e7eb', padding: '10px', borderRadius: '8px' }}>
                 <h4 style={{ marginBottom: '10px' }}>Uploaded Receipt</h4>
                 {selectedInvoice.receiptUrl && selectedInvoice.receiptUrl.endsWith('.pdf') ? (
-                  <a href={`http://localhost:5000${selectedInvoice.receiptUrl}`} target="_blank" rel="noreferrer" className="btn-primary" style={{ padding: '8px 16px', display: 'inline-block' }}>View PDF Receipt</a>
+                  <a href={`${API_BASE_URL}${selectedInvoice.receiptUrl}`} target="_blank" rel="noreferrer" className="btn-primary" style={{ padding: '8px 16px', display: 'inline-block' }}>View PDF Receipt</a>
                 ) : (
-                  <a href={`http://localhost:5000${selectedInvoice.receiptUrl}`} target="_blank" rel="noreferrer">
-                    <img src={`http://localhost:5000${selectedInvoice.receiptUrl}`} alt="Receipt" style={{ maxWidth: '100%', maxHeight: '300px', objectFit: 'contain', borderRadius: '4px' }} />
+                  <a href={`${API_BASE_URL}${selectedInvoice.receiptUrl}`} target="_blank" rel="noreferrer">
+                    <img src={`${API_BASE_URL}${selectedInvoice.receiptUrl}`} alt="Receipt" style={{ maxWidth: '100%', maxHeight: '300px', objectFit: 'contain', borderRadius: '4px' }} />
                   </a>
                 )}
               </div>
