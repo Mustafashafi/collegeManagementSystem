@@ -100,6 +100,25 @@ router.put('/requests/:id', checkPermission('Librarian', 'Issue Books'), async (
     await request.save();
     await book.save();
 
+    // Notify Student
+    const { createNotification } = require('../utils/notifier');
+    try {
+      const userObj = await require('../models/User').findById(request.userId);
+      if (userObj && userObj.email) {
+        await createNotification({
+          recipientEmail: userObj.email,
+          title: status === 'Issued' ? 'Book Issued Successfully' : 'Book Returned Successfully',
+          message: status === 'Issued'
+            ? `The book "${book.title}" has been issued to you! Due date is ${new Date(request.dueDate).toLocaleDateString()}.`
+            : `The book "${book.title}" has been successfully returned. Thank you!`,
+          type: 'book_request',
+          link: '/student/books'
+        });
+      }
+    } catch (notifierErr) {
+      console.error('Notifier failed:', notifierErr.message);
+    }
+
     res.json({ success: true, request });
   } catch (err) {
     res.status(500).json({ success: false, msg: err.message });
@@ -160,6 +179,21 @@ router.post('/request', checkPermission('Student', 'Access Library'), async (req
     });
     
     await request.save();
+
+    // Notify Librarian
+    const { createNotification } = require('../utils/notifier');
+    try {
+      await createNotification({
+        recipientRole: 'librarian',
+        title: 'New Book Request',
+        message: `${userName} (${userRole}) has requested "${book.title}".`,
+        type: 'book_request',
+        link: '/librarian/requests'
+      });
+    } catch (notifierErr) {
+      console.error('Notifier failed:', notifierErr.message);
+    }
+
     res.json({ success: true, request });
   } catch (err) {
     res.status(500).json({ success: false, msg: err.message });

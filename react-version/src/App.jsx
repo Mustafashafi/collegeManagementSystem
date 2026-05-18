@@ -71,7 +71,6 @@ import ParentDashboard from './pages/ParentDashboard';
 import ParentAcademic from './pages/ParentAcademic';
 import ParentAttendance from './pages/ParentAttendance';
 import ParentFees from './pages/ParentFees';
-import ParentCommunication from './pages/ParentCommunication';
 import ParentAssignments from './pages/ParentAssignments';
 import ParentTimetable from './pages/ParentTimetable';
 
@@ -266,7 +265,6 @@ function App() {
           <Route path="/parent/assignments" element={<ParentAssignments />} />
           <Route path="/parent/fees" element={<ParentFees />} />
           <Route path="/parent/timetable" element={<ParentTimetable />} />
-          <Route path="/parent/communication" element={<ParentCommunication />} />
         </Route>
 
         {/* Librarian Routes (LOGIN REQUIRED - ROLE: librarian) */}

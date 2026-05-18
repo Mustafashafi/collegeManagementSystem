@@ -98,7 +98,6 @@ export const parentNavigation = [
       { label: "Assignments", path: "/parent/assignments", icon: "fas fa-tasks" },
       { label: "Fee Records", path: "/parent/fees", icon: "fas fa-file-invoice-dollar" },
       { label: "Timetable", path: "/parent/timetable", icon: "fas fa-calendar-alt" },
-      { label: "Communication", path: "/parent/communication", icon: "fas fa-comments" },
       { label: "Logout", path: "/login", icon: "fas fa-sign-out-alt" }
     ]
   }

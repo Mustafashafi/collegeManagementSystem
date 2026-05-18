@@ -104,6 +104,22 @@ router.post('/fees/:id/upload-receipt', upload.single('receipt'), async (req, re
 
     await fee.save();
     
+    // Create notification for admin review
+    const { createNotification } = require('../utils/notifier');
+    try {
+      const student = await Student.findOne({ email: fee.studentEmail });
+      const studentName = student ? `${student.firstName} ${student.lastName}` : fee.studentEmail;
+      await createNotification({
+        recipientRole: 'admin',
+        title: 'Fee Receipt Submitted',
+        message: `A fee receipt has been submitted for student ${studentName} (${fee.feeType}). Please review.`,
+        type: 'fee_payment',
+        link: '/admin/fees'
+      });
+    } catch (notifierErr) {
+      console.error('Notifier failed:', notifierErr.message);
+    }
+    
     res.json({ success: true, msg: 'Receipt uploaded successfully. Waiting for Admin review.', fee });
   } catch (err) {
     res.status(500).json({ success: false, msg: err.message });

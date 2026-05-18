@@ -38,6 +38,7 @@ app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/applications', require('./routes/applications'));
 app.use('/api/students', require('./routes/students'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/superadmin', require('./routes/superadmin'));
 
 app.get('/', (req, res) => {
     res.send("College ERP Backend is running...");
@@ -50,6 +51,7 @@ app.use('/api/results', require('./routes/results'));
 app.use('/api/library', require('./routes/library'));
 app.use('/api/public', require('./routes/public'));
 app.use('/api/parents', require('./routes/parents'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // 404 Logger
 app.use((req, res, next) => {

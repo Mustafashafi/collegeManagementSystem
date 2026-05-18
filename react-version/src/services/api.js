@@ -94,4 +94,26 @@ export const libraryApi = {
   getMyRequests: (userId) => api.get(`/api/library/my-requests/${userId}`),
 };
 
+// Super Admin API
+export const superAdminApi = {
+  getDashboard: () => api.get('/api/superadmin/dashboard'),
+  getColleges: () => api.get('/api/superadmin/colleges'),
+  addCollege: (data) => api.post('/api/superadmin/colleges', data),
+  deleteCollege: (id) => api.delete(`/api/superadmin/colleges/${id}`),
+  getStudents: () => api.get('/api/superadmin/students'),
+  getActivity: () => api.get('/api/superadmin/activity'),
+  getRoles: () => api.get('/api/superadmin/roles'),
+  updateRole: (id, data) => api.put(`/api/superadmin/roles/${id}`, data),
+  getSettings: () => api.get('/api/superadmin/settings'),
+  updateSettings: (data) => api.put('/api/superadmin/settings', data),
+};
+
+// Notifications API
+export const notificationsApi = {
+  getNotifications: (params) => api.get('/api/notifications', { params }),
+  markRead: (id) => api.put(`/api/notifications/${id}/read`),
+  markAllRead: (data) => api.put('/api/notifications/read-all', data),
+  delete: (id) => api.delete(`/api/notifications/${id}`),
+};
+
 export default api;

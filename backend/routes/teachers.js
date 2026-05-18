@@ -110,6 +110,35 @@ router.post('/assignments', checkPermission('Teacher', 'Manage Assignments'), up
     }));
 
     await Assignment.insertMany(assignments);
+
+    // Create notifications for all students and parents
+    const { createNotification } = require('../utils/notifier');
+    try {
+      for (const student of students) {
+        // Notify Student
+        await createNotification({
+          recipientEmail: student.email,
+          title: 'New Assignment Released',
+          message: `"${title}" has been assigned for your subject: ${subject}.`,
+          type: 'assignment',
+          link: '/student/assignments'
+        });
+
+        // Notify Parent
+        if (student.parentEmail) {
+          await createNotification({
+            recipientEmail: student.parentEmail,
+            title: 'New Assignment Assigned',
+            message: `A new assignment "${title}" has been given to your child for ${subject}.`,
+            type: 'assignment',
+            link: '/parent/assignments'
+          });
+        }
+      }
+    } catch (notifierErr) {
+      console.error('Notifier failed:', notifierErr.message);
+    }
+
     res.json({ success: true, count: assignments.length });
   } catch (err) {
     console.error(err);
@@ -208,6 +237,34 @@ router.put('/grade/:id', async (req, res) => {
     assignment.feedback = feedback;
     assignment.showGrade = showGrade;
     await assignment.save();
+
+    // Create notifications for student and parent
+    const { createNotification } = require('../utils/notifier');
+    try {
+      // Notify Student
+      await createNotification({
+        recipientEmail: assignment.studentEmail,
+        title: 'Assignment Graded',
+        message: `Your assignment "${assignment.title}" has been graded. Grade: ${grade}.`,
+        type: 'grade',
+        link: '/student/assignments'
+      });
+
+      // Find student to get parentEmail
+      const student = await Student.findOne({ email: assignment.studentEmail });
+      if (student && student.parentEmail) {
+        await createNotification({
+          recipientEmail: student.parentEmail,
+          title: 'Assignment Graded',
+          message: `Your child's assignment "${assignment.title}" has been graded. Grade: ${grade}.`,
+          type: 'grade',
+          link: '/parent/assignments'
+        });
+      }
+    } catch (notifierErr) {
+      console.error('Notifier failed:', notifierErr.message);
+    }
+
     res.json({ success: true, assignment });
   } catch (err) {
     console.error(err);

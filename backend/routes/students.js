@@ -49,6 +49,29 @@ router.post('/assignments/submit/:id', checkPermission('Student', 'Submit Assign
       
       await assignment.save();
       console.log(`✅ Assignment ${req.params.id} submitted successfully!`);
+
+      // Notify Teacher
+      const { createNotification } = require('../utils/notifier');
+      try {
+        const student = await require('../models/Student').findOne({ email: assignment.studentEmail });
+        const studentName = student ? `${student.firstName} ${student.lastName}` : assignment.studentEmail;
+
+        const User = require('../models/User');
+        const teacherUser = await User.findOne({ name: assignment.teacher, role: 'teacher' });
+        const recipientEmail = teacherUser ? teacherUser.email : undefined;
+
+        await createNotification({
+          recipientEmail,
+          recipientRole: recipientEmail ? undefined : 'teacher',
+          title: 'Assignment Submitted',
+          message: `${studentName} has submitted the assignment "${assignment.title}".`,
+          type: 'assignment',
+          link: '/teacher/dashboard'
+        });
+      } catch (notifierErr) {
+        console.error('Notifier failed:', notifierErr.message);
+      }
+
       res.json({ success: true, msg: 'Assignment submitted successfully', assignment });
     } catch (err) {
       console.error(`❌ Submission Error:`, err);

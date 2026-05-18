@@ -344,7 +344,8 @@ router.get('/fees', async (req, res) => {
 router.post('/fees', async (req, res) => {
   try {
     const { studentEmail, studentName, program, year, feeType, amount, dueDate, description } = req.body;
-    
+    const { createNotification } = require('../utils/notifier');
+
     if (studentEmail) {
       // Check for existing invoice of same type
       const existing = await Fee.findOne({ studentEmail, feeType });
@@ -366,7 +367,32 @@ router.post('/fees', async (req, res) => {
         amountPaid: 0
       });
       await newFee.save();
+
+      // Notify student
+      try {
+        await createNotification({
+          recipientEmail: studentEmail,
+          title: 'New Fee Invoice Assigned',
+          message: `A new fee invoice for "${feeType}" of $${amount} has been assigned to you. Due: ${new Date(dueDate).toLocaleDateString()}.`,
+          type: 'fee_payment',
+          link: '/student/fees'
+        });
+        // Notify parent
+        if (student && student.parentEmail) {
+          await createNotification({
+            recipientEmail: student.parentEmail,
+            title: 'New Fee Invoice Assigned',
+            message: `A new fee invoice for "${feeType}" of $${amount} has been assigned to your child (${student.firstName} ${student.lastName}). Due: ${new Date(dueDate).toLocaleDateString()}.`,
+            type: 'fee_payment',
+            link: '/parent/fees'
+          });
+        }
+      } catch (notifierErr) {
+        console.error('Notifier failed (single fee):', notifierErr.message);
+      }
+
       return res.json({ success: true, msg: 'Invoice generated for student' });
+
     } else if (program && year) {
       // Bulk generation for a class
       const students = await Student.find({ program, year });
@@ -378,7 +404,6 @@ router.post('/fees', async (req, res) => {
         feeType 
       });
       const emailsWithFee = new Set(existingFees.map(f => f.studentEmail));
-
       const studentsToInvoiced = students.filter(s => !emailsWithFee.has(s.email));
 
       if (studentsToInvoiced.length === 0) {
@@ -399,6 +424,33 @@ router.post('/fees', async (req, res) => {
       }));
 
       await Fee.insertMany(feeRecords);
+
+      // Notify all students + parents in bulk
+      try {
+        for (const student of studentsToInvoiced) {
+          // Notify student
+          await createNotification({
+            recipientEmail: student.email,
+            title: 'New Fee Invoice Assigned',
+            message: `A new fee invoice for "${feeType}" of $${amount} has been assigned to you. Due: ${new Date(dueDate).toLocaleDateString()}.`,
+            type: 'fee_payment',
+            link: '/student/fees'
+          });
+          // Notify parent
+          if (student.parentEmail) {
+            await createNotification({
+              recipientEmail: student.parentEmail,
+              title: 'New Fee Invoice Assigned',
+              message: `A new fee invoice for "${feeType}" of $${amount} has been assigned to your child (${student.firstName} ${student.lastName}). Due: ${new Date(dueDate).toLocaleDateString()}.`,
+              type: 'fee_payment',
+              link: '/parent/fees'
+            });
+          }
+        }
+      } catch (notifierErr) {
+        console.error('Notifier failed (bulk fees):', notifierErr.message);
+      }
+
       return res.json({ 
         success: true, 
         msg: `Invoices generated for ${studentsToInvoiced.length} students. ${students.length - studentsToInvoiced.length} skipped (duplicates).` 
@@ -410,6 +462,7 @@ router.post('/fees', async (req, res) => {
     res.status(500).json({ success: false, msg: err.message });
   }
 });
+
 
 // @route   PUT /api/admin/fees/:id/record
 // @desc    Record a payment
@@ -468,6 +521,27 @@ router.put('/fees/:id/review-receipt', async (req, res) => {
     }
 
     await fee.save();
+
+    // Notify Parent
+    const { createNotification } = require('../utils/notifier');
+    try {
+      const student = await require('../models/Student').findOne({ email: fee.studentEmail });
+      const parentEmail = student ? student.parentEmail : undefined;
+      if (parentEmail) {
+        await createNotification({
+          recipientEmail: parentEmail,
+          title: action === 'accept' ? 'Fee Payment Approved' : 'Fee Payment Rejected',
+          message: action === 'accept'
+            ? `Your receipt submission for "${fee.feeType}" has been reviewed and approved!`
+            : `Your receipt submission for "${fee.feeType}" was rejected. Reason: ${fee.rejectionReason}`,
+          type: 'fee_payment',
+          link: '/parent/fees'
+        });
+      }
+    } catch (notifierErr) {
+      console.error('Notifier failed:', notifierErr.message);
+    }
+
     res.json({ success: true, msg: `Receipt ${action}ed successfully.`, fee });
   } catch (err) {
     res.status(500).json({ success: false, msg: err.message });

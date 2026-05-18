@@ -40,14 +40,13 @@ const AdminLibrarians = () => {
       </div>
 
       <div className="filter-bar" style={{ marginBottom: '20px' }}>
-        <div className="search-input" style={{ maxWidth: '400px', position: 'relative' }}>
-          <i className="fas fa-search" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}></i>
+        <div className="search-input" style={{ maxWidth: '400px' }}>
+          <i className="fas fa-search"></i>
           <input 
             type="text" 
             placeholder="Search librarians by name or email..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ width: '100%', padding: '10px 10px 10px 36px', background: '#fff', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', outline: 'none' }}
           />
         </div>
       </div>

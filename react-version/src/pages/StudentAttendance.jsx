@@ -24,13 +24,24 @@ const StudentAttendance = () => {
     if (user.email) fetchAttendance();
   }, [user.email]);
 
-  // Group by subject for summary
-  const subjects = [...new Set(attendance.map(a => a.subject))];
-  const summaryData = subjects.map(subject => {
-    const records = attendance.filter(a => a.subject === subject);
+  // Group by subject for summary with whitespace and case normalization
+  const summaryMap = {};
+  attendance.forEach(a => {
+    if (!a.subject) return;
+    const normalizedName = a.subject.trim().replace(/\s+/g, ' ');
+    const key = normalizedName.toLowerCase();
+    
+    if (!summaryMap[key]) {
+      summaryMap[key] = { name: normalizedName, records: [] };
+    }
+    summaryMap[key].records.push(a);
+  });
+
+  const summaryData = Object.keys(summaryMap).map(key => {
+    const { name, records } = summaryMap[key];
     const presentCount = records.filter(a => a.status === 'Present').length;
     const percentage = records.length > 0 ? Math.round((presentCount / records.length) * 100) : 0;
-    return { name: subject, percentage, stats: `${presentCount}/${records.length} Classes` };
+    return { name, percentage, stats: `${presentCount}/${records.length} Classes` };
   });
 
   if (loading) {
