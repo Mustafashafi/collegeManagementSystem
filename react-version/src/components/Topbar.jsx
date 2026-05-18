@@ -2,35 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { notificationsApi } from '../services/api';
 import toast from 'react-hot-toast';
 
-const Topbar = ({ user }) => {
-  const [notifications, setNotifications] = useState([]);
+const Topbar = ({ user, notifications = [], setNotifications }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
-
-  // Fetch notifications
-  const fetchNotifications = async () => {
-    if (!user?.email && !user?.role) return;
-    try {
-      const res = await notificationsApi.getNotifications({
-        email: user.email,
-        role: user.role
-      });
-      setNotifications(res.data || []);
-    } catch (err) {
-      console.error('Error loading notifications:', err);
-    }
-  };
-
-  useEffect(() => {
-    fetchNotifications();
-
-    // Polling every 8 seconds for notifications
-    const interval = setInterval(() => {
-      fetchNotifications();
-    }, 8000);
-
-    return () => clearInterval(interval);
-  }, [user?.email, user?.role]);
 
   // Handle outside click to close dropdown
   useEffect(() => {
