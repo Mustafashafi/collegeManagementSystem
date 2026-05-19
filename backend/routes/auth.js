@@ -59,7 +59,17 @@ router.post('/login', async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
-    // 7. Generate JWT Token
+    // 7. Get profile image (fallback to child's image for parents)
+    let profileImage = user.profileImage;
+    if (user.role === 'parent' && !profileImage) {
+      const Student = require('../models/Student');
+      const child = await Student.findOne({ parentEmail: user.email.toLowerCase() });
+      if (child && child.profileImage) {
+        profileImage = child.profileImage;
+      }
+    }
+
+    // 8. Generate JWT Token
     const token = jwt.sign(
       {
         id: user._id,
@@ -71,7 +81,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: '8h' } // Token expires in 8 hours
     );
 
-    // 8. Send response
+    // 9. Send response
     res.status(200).json({
       success: true,
       message: 'Login successful',
@@ -81,7 +91,7 @@ router.post('/login', async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        profileImage: user.profileImage,
+        profileImage: profileImage,
       },
     });
 
