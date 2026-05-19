@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { notificationsApi } from '../services/api';
 import toast from 'react-hot-toast';
+import { API_BASE_URL } from '../config/api';
 
 const Topbar = ({ user, notifications = [], setNotifications }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,7 +33,7 @@ const Topbar = ({ user, notifications = [], setNotifications }) => {
   const handleNotificationClick = async (notification) => {
     try {
       if (!notification.isRead) {
-        await notificationsApi.markRead(notification._id);
+        await notificationsApi.markRead(notification._id, user.email);
         setNotifications(prev => prev.map(n => n._id === notification._id ? { ...n, isRead: true } : n));
       }
       setIsOpen(false);
@@ -202,7 +203,13 @@ const Topbar = ({ user, notifications = [], setNotifications }) => {
         )}
 
         <div className="user-profile" style={{ marginLeft: '16px' }}>
-          <div className="avatar">{user.initials}</div>
+          <div className="avatar" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a1a' }}>
+            {user.profileImage ? (
+              <img src={`${API_BASE_URL}${user.profileImage}`} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              user.initials
+            )}
+          </div>
           <div className="user-info">
             <h4>{user.name}</h4>
             <p style={{ textTransform: 'capitalize' }}>{user.role}</p>

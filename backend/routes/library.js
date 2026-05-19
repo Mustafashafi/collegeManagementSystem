@@ -210,4 +210,16 @@ router.get('/my-requests/:userId', async (req, res) => {
   }
 });
 
+// @route   GET /api/library/profile/:email
+// @desc    Get librarian profile by email
+router.get('/profile/:email', async (req, res) => {
+  try {
+    const librarian = await require('../models/User').findOne({ email: req.params.email, role: 'librarian' }).select('-password');
+    if (!librarian) return res.status(404).json({ success: false, msg: 'Librarian profile not found' });
+    res.json(librarian);
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
 module.exports = router;

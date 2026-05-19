@@ -18,7 +18,8 @@ const StudentSchema = new mongoose.Schema({
   secondarySubjects: [{ type: String }],
   fatherName: { type: String },
   parentEmail: { type: String, lowercase: true, trim: true },
-  applicationRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Application' }
+  applicationRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Application' },
+  profileImage: { type: String }
 });
 
 module.exports = mongoose.model('Student', StudentSchema);

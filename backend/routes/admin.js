@@ -50,6 +50,153 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// @route   GET /api/admin/reports
+// @desc    Get real consolidated reports for the Admin Reports Tab
+router.get('/reports', async (req, res) => {
+  try {
+    const { type } = req.query;
+
+    if (type === 'admission') {
+      const Lead = require('../models/Lead');
+      const leads = await Lead.find();
+      
+      const conversionStats = {
+        totalLeads: leads.length,
+        admitted: leads.filter(l => l.status === 'Admitted').length,
+        inProgress: leads.filter(l => ['Applied', 'Interview', 'Offer Extended', 'New Inquiry', 'Contacted', 'Interested', 'Application Submitted'].includes(l.status)).length,
+        lost: leads.filter(l => ['Rejected', 'Inactive', 'Lost'].includes(l.status)).length,
+      };
+      
+      const sources = {};
+      leads.forEach(l => {
+        const src = l.source || 'Other';
+        sources[src] = (sources[src] || 0) + 1;
+      });
+
+      return res.json({ success: true, conversionStats, sources });
+    }
+
+    if (type === 'fees') {
+      const Fee = require('../models/Fee');
+      const defaulters = await Fee.find({ status: { $in: ['Pending', 'Partial'] } });
+      return res.json({ success: true, defaulters });
+    }
+
+    if (type === 'attendance') {
+      const Student = require('../models/Student');
+      const Attendance = require('../models/Attendance');
+      
+      const students = await Student.find();
+      const attendanceRecords = await Attendance.find();
+      
+      const defaulters = [];
+      for (const student of students) {
+        const studentLogs = attendanceRecords.filter(a => a.studentEmail === student.email);
+        if (studentLogs.length > 0) {
+          const present = studentLogs.filter(l => ['Present', 'Late'].includes(l.status)).length;
+          const rate = (present / studentLogs.length) * 100;
+          if (rate < 75) {
+            defaulters.push({
+              name: `${student.firstName} ${student.lastName}`,
+              email: student.email,
+              program: student.program,
+              year: student.year,
+              totalClasses: studentLogs.length,
+              presentClasses: present,
+              attendanceRate: rate.toFixed(1)
+            });
+          }
+        } else {
+          defaulters.push({
+            name: `${student.firstName} ${student.lastName}`,
+            email: student.email,
+            program: student.program,
+            year: student.year,
+            totalClasses: 0,
+            presentClasses: 0,
+            attendanceRate: '0.0'
+          });
+        }
+      }
+      return res.json({ success: true, defaulters });
+    }
+
+    if (type === 'teacher-attendance') {
+      const Teacher = require('../models/Teacher');
+      const TeacherAttendance = require('../models/TeacherAttendance');
+      
+      const teachers = await Teacher.find();
+      const attendance = await TeacherAttendance.find();
+      
+      const report = teachers.map(t => {
+        const logs = attendance.filter(a => a.teacherEmail === t.email);
+        const present = logs.filter(a => a.status === 'Present').length;
+        const absent = logs.filter(a => a.status === 'Absent').length;
+        const late = logs.filter(a => a.status === 'Late').length;
+        const percentage = logs.length > 0 ? (((present + late) / logs.length) * 100).toFixed(1) : '0.0';
+        
+        return {
+          name: t.name,
+          email: t.email,
+          teacherId: t.employeeId,
+          present,
+          absent,
+          late,
+          percentage
+        };
+      });
+      return res.json({ success: true, report });
+    }
+
+    if (type === 'academic') {
+      const Result = require('../models/Result');
+      const results = await Result.find();
+
+      const programs = {};
+      results.forEach(r => {
+        if (!r.program) return;
+        if (!programs[r.program]) {
+          programs[r.program] = { totalMarks: 0, obtainedMarks: 0, count: 0, subjectScores: {} };
+        }
+        programs[r.program].totalMarks += r.totalMarks;
+        programs[r.program].obtainedMarks += r.marksObtained;
+        programs[r.program].count += 1;
+        
+        if (!programs[r.program].subjectScores[r.subject]) {
+          programs[r.program].subjectScores[r.subject] = { total: 0, obtained: 0, count: 0 };
+        }
+        programs[r.program].subjectScores[r.subject].total += r.totalMarks;
+        programs[r.program].subjectScores[r.subject].obtained += r.marksObtained;
+        programs[r.program].subjectScores[r.subject].count += 1;
+      });
+
+      const report = Object.keys(programs).map(progName => {
+        const progData = programs[progName];
+        const avgPercentage = progData.totalMarks > 0 ? ((progData.obtainedMarks / progData.totalMarks) * 100).toFixed(1) : '0.0';
+        
+        const subjectBreakdown = Object.keys(progData.subjectScores).map(subName => {
+          const subData = progData.subjectScores[subName];
+          const subAvg = subData.total > 0 ? ((subData.obtained / subData.total) * 100).toFixed(1) : '0.0';
+          return { subjectName: subName, averageScore: subAvg };
+        });
+
+        return {
+          program: progName,
+          averageScore: avgPercentage,
+          totalExams: progData.count,
+          subjects: subjectBreakdown
+        };
+      });
+
+      return res.json({ success: true, report });
+    }
+
+    res.status(400).json({ success: false, msg: 'Invalid report type requested' });
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
 // @route   GET /api/admin/students
 // @desc    Get all students with pagination and search
 router.get('/students', async (req, res) => {

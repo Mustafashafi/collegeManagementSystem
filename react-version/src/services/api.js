@@ -49,6 +49,7 @@ export const adminApi = {
   updateRole: (id, data) => api.put(`/api/admin/roles/${id}`, data),
   addRole: (data) => api.post('/api/admin/roles', data),
   deleteRole: (id) => api.delete(`/api/admin/roles/${id}`),
+  getReports: (type) => api.get('/api/admin/reports', { params: { type } }),
 };
 
 // Parent API
@@ -80,6 +81,7 @@ export const applicationApi = {
 // Leads API
 export const leadsApi = {
   getAll: () => api.get('/api/leads'),
+  getReports: () => api.get('/api/leads/reports'),
 };
 
 // Library API
@@ -111,7 +113,7 @@ export const superAdminApi = {
 // Notifications API
 export const notificationsApi = {
   getNotifications: (params) => api.get('/api/notifications', { params }),
-  markRead: (id) => api.put(`/api/notifications/${id}/read`),
+  markRead: (id, email) => api.put(`/api/notifications/${id}/read`, { email }),
   markAllRead: (data) => api.put('/api/notifications/read-all', data),
   delete: (id) => api.delete(`/api/notifications/${id}`),
 };

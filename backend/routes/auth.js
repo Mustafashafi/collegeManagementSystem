@@ -169,4 +169,67 @@ router.get('/permissions', async (req, res) => {
   }
 });
 
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Configure profile image upload storage
+const profileUploadDir = path.join(__dirname, '../uploads/profiles');
+if (!fs.existsSync(profileUploadDir)) {
+  fs.mkdirSync(profileUploadDir, { recursive: true });
+}
+
+const profileStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, profileUploadDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, 'profile-' + Date.now() + path.extname(file.originalname).toLowerCase());
+  }
+});
+
+const profileUpload = multer({
+  storage: profileStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png/;
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = filetypes.test(file.mimetype);
+    if (extname && mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only JPEG, JPG, and PNG images are allowed!'));
+    }
+  }
+});
+
+// @route   POST /api/auth/profile-image
+// @desc    Upload profile image for any logged in user
+router.post('/profile-image', profileUpload.single('avatar'), async (req, res) => {
+  try {
+    const { email, role } = req.body;
+    if (!email) return res.status(400).json({ success: false, msg: 'Email is required' });
+    if (!req.file) return res.status(400).json({ success: false, msg: 'No file uploaded' });
+
+    const imageUrl = `/uploads/profiles/${req.file.filename}`;
+
+    // 1. Update the User record always
+    await User.findOneAndUpdate({ email }, { profileImage: imageUrl });
+
+    // 2. Update role-specific collections
+    if (role === 'student') {
+      const Student = require('../models/Student');
+      await Student.findOneAndUpdate({ email }, { profileImage: imageUrl });
+    } else if (role === 'teacher') {
+      const Teacher = require('../models/Teacher');
+      await Teacher.findOneAndUpdate({ email }, { profileImage: imageUrl });
+    }
+
+    res.json({ success: true, profileImage: imageUrl });
+  } catch (err) {
+    console.error('Profile image upload error:', err);
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
 module.exports = router;

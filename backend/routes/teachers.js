@@ -292,4 +292,16 @@ router.put('/assignments/due-date', checkPermission('Teacher', 'Manage Assignmen
   }
 });
 
+// @route   GET /api/teachers/profile/:email
+// @desc    Get teacher profile by email
+router.get('/profile/:email', async (req, res) => {
+  try {
+    const teacher = await Teacher.findOne({ email: req.params.email });
+    if (!teacher) return res.status(404).json({ success: false, msg: 'Teacher profile not found' });
+    res.json(teacher);
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
 module.exports = router;

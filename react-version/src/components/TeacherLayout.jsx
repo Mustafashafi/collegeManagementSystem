@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { notificationsApi } from '../services/api';
+import { API_BASE_URL } from '../config/api';
 
 const TeacherLayout = ({ children }) => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const teacherName = user.name || 'Teacher';
+  const location = useLocation();
 
   // ── Notification State ──────────────────────────────────────────────────────
   const [notifications, setNotifications] = useState([]);
@@ -37,6 +39,32 @@ const TeacherLayout = ({ children }) => {
     return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
 
+  // Mark notifications as read when navigating to their link
+  useEffect(() => {
+    if (notifications.length === 0) return;
+
+    const unreadMatching = notifications.filter(n => 
+      !n.isRead && n.link && (location.pathname === n.link || location.pathname.startsWith(n.link + '/'))
+    );
+
+    if (unreadMatching.length > 0) {
+      const markAsRead = async () => {
+        try {
+          // Update local state immediately for snappy UI
+          setNotifications(prev => prev.map(n => 
+            unreadMatching.some(um => um._id === n._id) ? { ...n, isRead: true } : n
+          ));
+          
+          // API calls in background
+          await Promise.all(unreadMatching.map(n => notificationsApi.markRead(n._id, user.email)));
+        } catch (err) {
+          console.error('Failed to mark notifications as read on navigation', err);
+        }
+      };
+      markAsRead();
+    }
+  }, [location.pathname, notifications]);
+
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const handleMarkAllRead = async () => {
@@ -51,7 +79,7 @@ const TeacherLayout = ({ children }) => {
   const handleNotificationClick = async (n) => {
     try {
       if (!n.isRead) {
-        await notificationsApi.markRead(n._id);
+        await notificationsApi.markRead(n._id, user.email);
         setNotifications(prev => prev.map(x => x._id === n._id ? { ...x, isRead: true } : x));
       }
       setIsOpen(false);
@@ -80,6 +108,35 @@ const TeacherLayout = ({ children }) => {
   };
   const initials = getInitials(teacherName);
 
+  const getLinkUnreadCount = (path) => {
+    return (notifications || []).filter(n => {
+      if (n.isRead || !n.link) return false;
+      if (n.link === path) return true;
+      if (n.link.startsWith(path + '/')) return true;
+      return false;
+    }).length;
+  };
+
+  const renderSidebarBadge = (path) => {
+    const count = getLinkUnreadCount(path);
+    if (count === 0) return null;
+    return (
+      <span style={{
+        background: '#ef4444',
+        color: '#fff',
+        borderRadius: '10px',
+        padding: '2px 8px',
+        fontSize: '11px',
+        fontWeight: 700,
+        minWidth: '20px',
+        textAlign: 'center',
+        marginLeft: '8px'
+      }}>
+        {count}
+      </span>
+    );
+  };
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
       {/* Sidebar */}
@@ -94,13 +151,38 @@ const TeacherLayout = ({ children }) => {
         <div className="nav-menu" style={{ padding: '20px 0', flex: 1 }}>
           <div className="nav-section">
             <div className="nav-section-title" style={{ padding: '0 24px', fontSize: '11px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.5px' }}>Teacher Menu</div>
-            <NavLink to="/teacher/dashboard" className="nav-item"><i className="fas fa-home"></i> Dashboard</NavLink>
-            <NavLink to="/teacher/timetable" className="nav-item"><i className="fas fa-calendar-alt"></i> Timetable</NavLink>
-            <NavLink to="/teacher/classes" className="nav-item"><i className="fas fa-chalkboard"></i> My Classes</NavLink>
-            <NavLink to="/teacher/attendance" className="nav-item"><i className="fas fa-clipboard-user"></i> Attendance</NavLink>
-            <NavLink to="/teacher/assignments" className="nav-item"><i className="fas fa-tasks"></i> Assignments</NavLink>
-            <NavLink to="/teacher/results" className="nav-item"><i className="fas fa-poll"></i> Results / Grades</NavLink>
-            <NavLink to="/teacher/events" className="nav-item"><i className="fas fa-bell"></i> Notices & Events</NavLink>
+            <NavLink to="/teacher/dashboard" className="nav-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div><i className="fas fa-home"></i> Dashboard</div>
+              {renderSidebarBadge("/teacher/dashboard")}
+            </NavLink>
+            <NavLink to="/teacher/profile" className="nav-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div><i className="fas fa-user-circle"></i> My Profile</div>
+              {renderSidebarBadge("/teacher/profile")}
+            </NavLink>
+            <NavLink to="/teacher/timetable" className="nav-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div><i className="fas fa-calendar-alt"></i> Timetable</div>
+              {renderSidebarBadge("/teacher/timetable")}
+            </NavLink>
+            <NavLink to="/teacher/classes" className="nav-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div><i className="fas fa-chalkboard"></i> My Classes</div>
+              {renderSidebarBadge("/teacher/classes")}
+            </NavLink>
+            <NavLink to="/teacher/attendance" className="nav-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div><i className="fas fa-clipboard-user"></i> Attendance</div>
+              {renderSidebarBadge("/teacher/attendance")}
+            </NavLink>
+            <NavLink to="/teacher/assignments" className="nav-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div><i className="fas fa-tasks"></i> Assignments</div>
+              {renderSidebarBadge("/teacher/assignments")}
+            </NavLink>
+            <NavLink to="/teacher/results" className="nav-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div><i className="fas fa-poll"></i> Results / Grades</div>
+              {renderSidebarBadge("/teacher/results")}
+            </NavLink>
+            <NavLink to="/teacher/events" className="nav-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div><i className="fas fa-bell"></i> Notices & Events</div>
+              {renderSidebarBadge("/teacher/events")}
+            </NavLink>
             <NavLink to="/login" className="nav-item" style={{ marginTop: '20px' }}><i className="fas fa-sign-out-alt"></i> Logout</NavLink>
           </div>
         </div>
@@ -212,8 +294,12 @@ const TeacherLayout = ({ children }) => {
             )}
 
             {/* ── Avatar ── */}
-            <div style={{ width: '36px', height: '36px', background: '#1a1a1a', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '13px' }}>
-              {initials}
+            <div style={{ width: '36px', height: '36px', background: '#1a1a1a', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '13px', overflow: 'hidden' }}>
+              {user.profileImage ? (
+                <img src={`${API_BASE_URL}${user.profileImage}`} alt={teacherName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                initials
+              )}
             </div>
             <div className="user-info">
               <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{teacherName}</h4>

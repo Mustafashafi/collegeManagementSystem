@@ -2,36 +2,31 @@ import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { API_BASE_URL } from '../config/api';
 
-const StudentProfile = () => {
-  const [student, setStudent] = useState(null);
-  const [attendance, setAttendance] = useState([]);
+const LibrarianProfile = () => {
+  const [librarian, setLibrarian] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
-    const fetchProfileData = async () => {
+    const fetchProfile = async () => {
       try {
-        const [profileRes, attendanceRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/students/profile/${user.email}`),
-          fetch(`${API_BASE_URL}/api/students/attendance/${user.email}`)
-        ]);
-
-        const profileData = await profileRes.json();
-        const attendanceData = await attendanceRes.json();
-
-        if (profileRes.ok) setStudent(profileData);
-        if (attendanceRes.ok) setAttendance(attendanceData);
-
+        const res = await fetch(`${API_BASE_URL}/api/library/profile/${user.email}`);
+        const data = await res.json();
+        if (res.ok) {
+          setLibrarian(data);
+        } else {
+          toast.error("Failed to load profile.");
+        }
       } catch (err) {
-        console.error('Error fetching profile data:', err);
-        toast.error("Failed to load profile details.");
+        console.error('Error fetching librarian profile:', err);
+        toast.error("Error connecting to server.");
       } finally {
         setLoading(false);
       }
     };
-    if (user.email) fetchProfileData();
+    if (user.email) fetchProfile();
   }, [user.email]);
 
   const handleAvatarClick = () => {
@@ -44,7 +39,6 @@ const StudentProfile = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Client-side validations
     if (!file.type.match(/image\/(jpeg|jpg|png)/)) {
       toast.error("Only JPG, JPEG, and PNG images are allowed.");
       return;
@@ -58,7 +52,7 @@ const StudentProfile = () => {
     const formData = new FormData();
     formData.append('avatar', file);
     formData.append('email', user.email);
-    formData.append('role', 'student');
+    formData.append('role', 'librarian');
 
     setUploading(true);
     try {
@@ -69,14 +63,14 @@ const StudentProfile = () => {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success("Profile image updated successfully!");
-        setStudent(prev => ({ ...prev, profileImage: data.profileImage }));
+        setLibrarian(prev => ({ ...prev, profileImage: data.profileImage }));
 
         // Sync with localStorage
         const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
         storedUser.profileImage = data.profileImage;
         localStorage.setItem('user', JSON.stringify(storedUser));
 
-        // Reload after short delay to refresh header avatar
+        // Reload after short delay to refresh layout header
         setTimeout(() => {
           window.location.reload();
         }, 800);
@@ -94,12 +88,12 @@ const StudentProfile = () => {
   if (loading) {
     return (
       <div className="dashboard-content" style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
-        <i className="fas fa-spinner fa-spin" style={{ fontSize: '30px' }}></i>
+        <i className="fas fa-spinner fa-spin" style={{ fontSize: '30px', color: 'var(--primary)' }}></i>
       </div>
     );
   }
 
-  if (!student) {
+  if (!librarian) {
     return (
       <div className="dashboard-content">
         <div style={{ textAlign: 'center', padding: '60px' }}>
@@ -109,15 +103,18 @@ const StudentProfile = () => {
     );
   }
 
-  const initials = `${student.firstName[0]}${student.lastName[0]}`;
-  const totalClasses = attendance.length;
-  const presentClasses = attendance.filter(a => a.status === 'Present').length;
-  const attendanceRate = totalClasses > 0 ? Math.round((presentClasses / totalClasses) * 100) : 0;
+  const getInitials = (name) => {
+    if (!name) return 'LB';
+    const names = name.split(' ');
+    if (names.length >= 2) return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  };
+  const initials = getInitials(librarian.name);
 
   return (
     <div className="dashboard-content">
       <div className="profile-card" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '16px', maxWidth: '900px', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>
-        <div className="profile-header" style={{ background: '#1a1a1a', padding: '40px', color: '#fff', display: 'flex', alignItems: 'center', gap: '30px', position: 'relative' }}>
+        <div className="profile-header" style={{ background: '#0f172a', padding: '40px', color: '#fff', display: 'flex', alignItems: 'center', gap: '30px', position: 'relative' }}>
           
           {/* Avatar container with hover upload triggers */}
           <div 
@@ -127,7 +124,7 @@ const StudentProfile = () => {
               height: '100px', 
               borderRadius: '24px', 
               background: '#fff', 
-              color: '#1a1a1a', 
+              color: '#0f172a', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
@@ -140,9 +137,9 @@ const StudentProfile = () => {
             }}
             title="Click to update profile image"
           >
-            {student.profileImage ? (
+            {librarian.profileImage ? (
               <img 
-                src={`${API_BASE_URL}${student.profileImage}`} 
+                src={`${API_BASE_URL}${librarian.profileImage}`} 
                 alt="Avatar" 
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
               />
@@ -197,66 +194,56 @@ const StudentProfile = () => {
           />
 
           <div className="profile-title">
-            <h1 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '4px' }}>{student.firstName} {student.lastName}</h1>
-            <p style={{ opacity: 0.8, fontSize: '14px' }}>{student.program}</p>
-            <div className="status-badge" style={{ marginTop: '12px', display: 'inline-block', padding: '4px 12px', background: 'rgba(255,255,255,0.1)', borderRadius: '20px', fontSize: '12px', fontWeight: 600 }}>{student.status}</div>
-          </div>
-          <div className="attendance-radial" style={{ marginLeft: 'auto', textAlign: 'center' }}>
-            <div style={{ fontSize: '28px', fontWeight: 800, color: attendanceRate > 75 ? '#22c55e' : '#f59e0b' }}>{attendanceRate}%</div>
-            <div style={{ fontSize: '10px', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '1px' }}>Overall Attendance</div>
+            <h1 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '4px' }}>{librarian.name}</h1>
+            <p style={{ opacity: 0.8, fontSize: '14px' }}>Library Administrator &bull; Resource Operations</p>
+            <div className="status-badge" style={{ marginTop: '12px', display: 'inline-block', padding: '4px 12px', background: '#dcfce7', color: '#166534', borderRadius: '20px', fontSize: '12px', fontWeight: 600 }}>Active</div>
           </div>
         </div>
         
         <div className="profile-body" style={{ padding: '30px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
           <div className="info-section">
             <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '20px', borderBottom: '1px solid #f3f4f6', paddingBottom: '10px', color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <i className="fas fa-user-circle" style={{ color: '#6366f1' }}></i> Personal Information
+              <i className="fas fa-user-circle" style={{ color: '#6366f1' }}></i> Librarian Information
             </h3>
             <div className="info-row" style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
               <span className="info-label" style={{ color: '#6b7280', fontWeight: 500 }}>Full Name</span>
-              <span className="info-val" style={{ fontWeight: 600 }}>{student.firstName} {student.lastName}</span>
+              <span className="info-val" style={{ fontWeight: 600 }}>{librarian.name}</span>
             </div>
             <div className="info-row" style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span className="info-label" style={{ color: '#6b7280', fontWeight: 500 }}>Student ID</span>
-              <span className="info-val" style={{ fontWeight: 600 }}>{student.studentId}</span>
+              <span className="info-label" style={{ color: '#6b7280', fontWeight: 500 }}>System Email</span>
+              <span className="info-val" style={{ fontWeight: 600 }}>{librarian.email}</span>
             </div>
             <div className="info-row" style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span className="info-label" style={{ color: '#6b7280', fontWeight: 500 }}>Email</span>
-              <span className="info-val" style={{ fontWeight: 600 }}>{student.email}</span>
+              <span className="info-label" style={{ color: '#6b7280', fontWeight: 500 }}>Account Role</span>
+              <span className="info-val" style={{ fontWeight: 600, textTransform: 'capitalize' }}>{librarian.role}</span>
             </div>
             <div className="info-row" style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span className="info-label" style={{ color: '#6b7280', fontWeight: 500 }}>Phone</span>
-              <span className="info-val" style={{ fontWeight: 600 }}>{student.phone}</span>
-            </div>
-            <div className="info-row" style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span className="info-label" style={{ color: '#6b7280', fontWeight: 500 }}>Date of Birth</span>
-              <span className="info-val" style={{ fontWeight: 600 }}>{new Date(student.dob).toLocaleDateString()}</span>
+              <span className="info-label" style={{ color: '#6b7280', fontWeight: 500 }}>Registered Date</span>
+              <span className="info-val" style={{ fontWeight: 600 }}>{new Date(librarian.createdAt).toLocaleDateString()}</span>
             </div>
           </div>
 
           <div className="info-section">
             <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '20px', borderBottom: '1px solid #f3f4f6', paddingBottom: '10px', color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <i className="fas fa-graduation-cap" style={{ color: '#10b981' }}></i> Academic Details
+              <i className="fas fa-key" style={{ color: '#10b981' }}></i> Privileges & Scope
             </h3>
-            <div className="info-row" style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span className="info-label" style={{ color: '#6b7280', fontWeight: 500 }}>Admission Date</span>
-              <span className="info-val" style={{ fontWeight: 600 }}>{new Date(student.admissionDate).toLocaleDateString()}</span>
-            </div>
-            <div className="info-row" style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span className="info-label" style={{ color: '#6b7280', fontWeight: 500 }}>Current Year</span>
-              <span className="info-val" style={{ fontWeight: 600, color: '#2563eb' }}>{student.year || '1st Year'}</span>
-            </div>
-            <div className="info-row" style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span className="info-label" style={{ color: '#6b7280', fontWeight: 500 }}>Attendance Rate</span>
-              <span className="info-val" style={{ fontWeight: 700, color: attendanceRate > 75 ? '#166534' : '#991b1b' }}>{attendanceRate}% ({presentClasses}/{totalClasses})</span>
-            </div>
-            <div className="info-row" style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span className="info-label" style={{ color: '#6b7280', fontWeight: 500 }}>Status</span>
-              <span className="info-val" style={{ fontWeight: 600, color: '#166534' }}>{student.status}</span>
-            </div>
-            <div className="info-row" style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span className="info-label" style={{ color: '#6b7280', fontWeight: 500 }}>Campus</span>
-              <span className="info-val" style={{ fontWeight: 600 }}>Main Campus, Block C</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#374151' }}>
+                <i className="fas fa-check-circle" style={{ color: '#10b981' }}></i>
+                <span>Manage Book Inventory Catalog</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#374151' }}>
+                <i className="fas fa-check-circle" style={{ color: '#10b981' }}></i>
+                <span>Review & Approve Book Issue Requests</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#374151' }}>
+                <i className="fas fa-check-circle" style={{ color: '#10b981' }}></i>
+                <span>Log Book Return & Circulation History</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#374151' }}>
+                <i className="fas fa-check-circle" style={{ color: '#10b981' }}></i>
+                <span>Publish Department notices & events</span>
+              </div>
             </div>
           </div>
         </div>
@@ -265,4 +252,4 @@ const StudentProfile = () => {
   );
 };
 
-export default StudentProfile;
+export default LibrarianProfile;

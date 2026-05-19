@@ -108,6 +108,7 @@ export const librarianNavigation = [
     title: "Library Menu",
     links: [
       { label: "Dashboard", path: "/librarian/dashboard", icon: "fas fa-home" },
+      { label: "My Profile", path: "/librarian/profile", icon: "fas fa-user-circle" },
       { label: "Book Inventory", path: "/librarian/books", icon: "fas fa-book" },
       { label: "Book Requests", path: "/librarian/requests", icon: "fas fa-list-ul" },
       { label: "Issue Records", path: "/librarian/records", icon: "fas fa-history" },

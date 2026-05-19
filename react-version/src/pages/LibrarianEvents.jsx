@@ -16,9 +16,7 @@ const LibrarianEvents = () => {
           <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Library Events & Notices</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>Stay updated with library news, maintenance, and staff schedules.</p>
         </div>
-        <Link to="/librarian/events/add" className="btn-primary" style={{ padding: '10px 20px', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>
-          <i className="fas fa-plus"></i> Post New Notice
-        </Link>
+
       </div>
 
       <div className="notice-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

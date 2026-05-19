@@ -207,7 +207,7 @@ const AdminFees = () => {
                   <td>${inv.amount.toLocaleString()}</td>
                   <td>${(inv.amountPaid || 0).toLocaleString()}</td>
                   <td>
-                    <span className={`status-badge ${inv.status === 'Paid' ? 'status-paid' : inv.status === 'Partial' ? 'status-partial' : inv.status === 'Under Review' ? 'status-review' : 'status-unpaid'}`}>
+                    <span className={`status-badge ${inv.status === 'Paid' ? 'status-paid' : inv.status === 'Partial' ? 'status-partial' : inv.status === 'Under Review' ? 'status-review' : 'status-unpaid'}`} style={{ whiteSpace: 'nowrap' }}>
                       {inv.status}
                     </span>
                   </td>

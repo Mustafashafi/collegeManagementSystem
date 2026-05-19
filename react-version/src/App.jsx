@@ -55,6 +55,7 @@ import TeacherEvents from './pages/TeacherEvents';
 import TeacherAddAssignment from './pages/TeacherAddAssignment';
 import TeacherViewSubmissions from './pages/TeacherViewSubmissions';
 import TeacherTimetable from './pages/TeacherTimetable';
+import TeacherProfile from './pages/TeacherProfile';
 
 import StudentDashboard from './pages/StudentDashboard';
 import StudentProfile from './pages/StudentProfile';
@@ -82,6 +83,7 @@ import LibrarianRequests from './pages/LibrarianRequests';
 import LibrarianRecords from './pages/LibrarianRecords';
 import LibrarianEvents from './pages/LibrarianEvents';
 import LibrarianAddEvent from './pages/LibrarianAddEvent';
+import LibrarianProfile from './pages/LibrarianProfile';
 
 // Public Website Pages
 import PublicLayout from './layouts/PublicLayout';
@@ -213,6 +215,7 @@ function App() {
                 <Route path="attendance" element={<TeacherAttendance />} />
                 <Route path="assignments" element={<TeacherAssignments />} />
                 <Route path="timetable" element={<TeacherTimetable />} />
+                <Route path="profile" element={<TeacherProfile />} />
                 <Route path="results" element={<TeacherResults />} />
                 <Route path="events" element={<TeacherEvents />} />
                 <Route path="add-assignment" element={<TeacherAddAssignment />} />
@@ -280,6 +283,7 @@ function App() {
         >
           <Route path="/librarian" element={<LibrarianDashboard />} />
           <Route path="/librarian/dashboard" element={<LibrarianDashboard />} />
+          <Route path="/librarian/profile" element={<LibrarianProfile />} />
           <Route path="/librarian/books" element={<LibrarianBooks />} />
           <Route path="/librarian/books/add" element={<LibrarianAddBook />} />
           <Route path="/librarian/requests" element={<LibrarianRequests />} />

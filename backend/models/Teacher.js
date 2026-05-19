@@ -10,7 +10,8 @@ const TeacherSchema = new mongoose.Schema({
   joinedDate: { type: Date, default: Date.now },
   subjects: [{ type: String }],
   assignedClasses: [{ type: String }], // e.g. ["B.Sc CS - 2nd Year", "BBA - 1st Year"]
-  status: { type: String, default: 'Active' }
+  status: { type: String, default: 'Active' },
+  profileImage: { type: String }
 });
 
 module.exports = mongoose.model('Teacher', TeacherSchema);

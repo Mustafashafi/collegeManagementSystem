@@ -59,7 +59,6 @@ const AdminDashboard = () => {
         <div className="panel">
           <div className="panel-header">
             <h3>Recent Admissions / Applications</h3>
-            <button className="btn-sm">View All</button>
           </div>
           <table className="data-table">
             <thead>

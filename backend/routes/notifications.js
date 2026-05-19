@@ -24,7 +24,20 @@ router.get('/', async (req, res) => {
     }
 
     const notifications = await Notification.find(query).sort({ createdAt: -1 }).limit(50);
-    res.json(notifications);
+    
+    // Format notifications to set isRead dynamically per user if it's role-based
+    const formattedNotifications = notifications.map(notification => {
+      const nObj = notification.toObject();
+      if (email) {
+        const userEmail = email.toLowerCase().trim();
+        nObj.isRead = nObj.recipientEmail 
+          ? nObj.isRead 
+          : (nObj.readBy && nObj.readBy.includes(userEmail));
+      }
+      return nObj;
+    });
+
+    res.json(formattedNotifications);
   } catch (err) {
     console.error('Error fetching notifications:', err.message);
     res.status(500).send('Server Error');
@@ -32,14 +45,25 @@ router.get('/', async (req, res) => {
 });
 
 // @route   PUT /api/notifications/:id/read
-// @desc    Mark a notification as read
+// @desc    Mark a notification as read (supports user email tracking for role-based notifications)
 router.put('/:id/read', async (req, res) => {
   try {
+    const { email } = req.body || {};
     const notification = await Notification.findById(req.params.id);
     if (!notification) {
       return res.status(404).json({ msg: 'Notification not found' });
     }
+
     notification.isRead = true;
+    if (email) {
+      const userEmail = email.toLowerCase().trim();
+      if (!notification.readBy) {
+        notification.readBy = [];
+      }
+      if (!notification.readBy.includes(userEmail)) {
+        notification.readBy.push(userEmail);
+      }
+    }
     await notification.save();
     res.json(notification);
   } catch (err) {
@@ -52,18 +76,30 @@ router.put('/:id/read', async (req, res) => {
 // @desc    Mark all notifications for a user as read
 router.put('/read-all', async (req, res) => {
   try {
-    const { email, role } = req.body;
-    const query = { $or: [] };
+    const { email, role } = req.body || {};
+    
     if (email) {
-      query.$or.push({ recipientEmail: email.toLowerCase().trim() });
+      const userEmail = email.toLowerCase().trim();
+      
+      // 1. Mark individual ones as read directly
+      await Notification.updateMany(
+        { recipientEmail: userEmail },
+        { $set: { isRead: true } }
+      );
+      
+      // 2. Append to readBy for role-based notifications
+      if (role) {
+        const roleNotifications = await Notification.find({ recipientRole: role.toLowerCase() });
+        for (const n of roleNotifications) {
+          if (!n.readBy) n.readBy = [];
+          if (!n.readBy.includes(userEmail)) {
+            n.readBy.push(userEmail);
+            await n.save();
+          }
+        }
+      }
     }
-    if (role) {
-      query.$or.push({ recipientRole: role.toLowerCase() });
-    }
-
-    if (query.$or.length > 0) {
-      await Notification.updateMany(query, { $set: { isRead: true } });
-    }
+    
     res.json({ success: true });
   } catch (err) {
     console.error('Error marking all read:', err.message);

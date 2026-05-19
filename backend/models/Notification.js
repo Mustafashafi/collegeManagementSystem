@@ -8,6 +8,7 @@ const NotificationSchema = new mongoose.Schema({
   type: { type: String, required: true }, // e.g. 'fee_payment', 'book_request', 'assignment', 'grade'
   link: { type: String, required: false },
   isRead: { type: Boolean, default: false },
+  readBy: { type: [String], default: [] },
   createdAt: { type: Date, default: Date.now }
 });
 

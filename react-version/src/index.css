@@ -358,6 +358,12 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+/* Tighter spacing between columns specifically in CRM module */
+.role-crm .data-table th,
+.role-crm .data-table td {
+  padding: 10px 10px;
+}
+
 .data-table th {
   background: #f9fafb;
   font-weight: 600;
@@ -382,6 +388,7 @@ body {
   border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .status-approved {

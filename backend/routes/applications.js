@@ -84,6 +84,33 @@ router.post('/', upload.fields([
     });
 
     await newApplication.save();
+
+    // Auto-convert lead to "Application Submitted" if email matches
+    const Lead = require('../models/Lead');
+    const Task = require('../models/Task');
+    let matchedLead = await Lead.findOneAndUpdate(
+      { email: email.trim().toLowerCase() }, 
+      { $set: { status: 'Application Submitted', statusClass: 'status-interested' } },
+      { new: true }
+    );
+
+    // Alternative match by case-sensitive email if lowercase didn't work
+    if (!matchedLead) {
+      matchedLead = await Lead.findOneAndUpdate(
+        { email: email }, 
+        { $set: { status: 'Application Submitted', statusClass: 'status-interested' } },
+        { new: true }
+      );
+    }
+
+    if (matchedLead) {
+      // Mark all existing pending auto-followups for this lead as Completed
+      await Task.updateMany(
+        { lead: matchedLead._id, type: 'auto-followup', status: 'Pending' },
+        { $set: { status: 'Completed' } }
+      );
+    }
+
     res.json({ success: true, application: newApplication });
   } catch (err) {
     console.error('Submit Application Error:', err);
@@ -214,10 +241,21 @@ router.post('/:id/enroll', async (req, res) => {
     app.statusClass = 'status-approved';
     await app.save();
 
-    // 8. Automatically mark all CRM tasks for this person as 'Completed'
+    // 8. Automatically mark all CRM tasks for this person as 'Completed' and update lead to Admitted
     const Lead = require('../models/Lead');
     const Task = require('../models/Task');
-    const lead = await Lead.findOne({ email: app.email });
+    let lead = await Lead.findOneAndUpdate(
+      { email: app.email.trim().toLowerCase() },
+      { $set: { status: 'Admitted', statusClass: 'status-approved' } },
+      { new: true }
+    );
+    if (!lead) {
+      lead = await Lead.findOneAndUpdate(
+        { email: app.email },
+        { $set: { status: 'Admitted', statusClass: 'status-approved' } },
+        { new: true }
+      );
+    }
     if (lead) {
       await Task.updateMany({ lead: lead._id }, { status: 'Completed' });
     }

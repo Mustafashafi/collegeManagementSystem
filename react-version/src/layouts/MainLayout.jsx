@@ -40,7 +40,7 @@ const MainLayout = ({ sidebarProps, user: initialUser }) => {
     if (notifications.length === 0) return;
 
     const unreadMatching = notifications.filter(n => 
-      !n.isRead && n.link && (n.link === location.pathname || n.link.startsWith(location.pathname + '/'))
+      !n.isRead && n.link && (location.pathname === n.link || location.pathname.startsWith(n.link + '/'))
     );
 
     if (unreadMatching.length > 0) {
@@ -52,7 +52,7 @@ const MainLayout = ({ sidebarProps, user: initialUser }) => {
           ));
           
           // API calls in background
-          await Promise.all(unreadMatching.map(n => notificationsApi.markRead(n._id)));
+          await Promise.all(unreadMatching.map(n => notificationsApi.markRead(n._id, user.email)));
         } catch (err) {
           console.error('Failed to mark notifications as read on navigation', err);
         }
@@ -62,7 +62,7 @@ const MainLayout = ({ sidebarProps, user: initialUser }) => {
   }, [location.pathname, notifications]);
 
   return (
-    <div className="main-layout">
+    <div className={`main-layout role-${user.role || 'unknown'}`}>
       <Sidebar {...sidebarProps} notifications={notifications} />
       <main className="main-content">
         <Topbar user={user} notifications={notifications} setNotifications={setNotifications} />
