@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { parentApi } from '../services/api';
+import { API_BASE_URL } from '../config/api';
 import toast from 'react-hot-toast';
 
 const ParentDashboard = () => {
@@ -106,8 +107,20 @@ const ParentDashboard = () => {
                 boxShadow: selectedChild?._id === child._id ? '0 10px 15px -3px rgba(0,0,0,0.1)' : 'none'
               }}
             >
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <i className="fas fa-user-graduate"></i>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                {child.profileImage ? (
+                  <img 
+                    src={child.profileImage.startsWith('http') ? child.profileImage : `${API_BASE_URL}${child.profileImage}`} 
+                    alt="avatar" 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      const sibling = e.target.nextSibling;
+                      if (sibling) sibling.style.display = 'block';
+                    }}
+                  />
+                ) : null}
+                <i className="fas fa-user-graduate" style={{ display: child.profileImage ? 'none' : 'block' }}></i>
               </div>
               <div>
                 <h4 style={{ fontSize: '14px', fontWeight: 700 }}>{child.firstName} {child.lastName}</h4>
