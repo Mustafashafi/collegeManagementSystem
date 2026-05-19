@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { API_BASE_URL } from '../config/api';
@@ -15,6 +15,22 @@ const CRMAddLead = () => {
     notes: ''
   });
   const [loading, setLoading] = useState(false);
+  const [programsList, setProgramsList] = useState([]);
+
+  useEffect(() => {
+    const fetchPrograms = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/public/programs`);
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setProgramsList(data);
+        }
+      } catch (err) {
+        console.error('Error fetching programs:', err);
+      }
+    };
+    fetchPrograms();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -126,9 +142,9 @@ const CRMAddLead = () => {
                 style={{ width: '100%', padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
               >
                 <option value="">Select Program...</option>
-                <option>B.Sc Computer Science</option>
-                <option>Business Administration</option>
-                <option>Engineering</option>
+                {programsList.map(prog => (
+                  <option key={prog._id} value={prog.name}>{prog.name}</option>
+                ))}
               </select>
             </div>
             <div className="form-group" style={{ marginBottom: '20px' }}>
