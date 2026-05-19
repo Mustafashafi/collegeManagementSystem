@@ -14,7 +14,9 @@ const Assignment = require('../models/Assignment');
 router.get('/stats', async (req, res) => {
   try {
     const totalStudents = await Student.countDocuments();
-    const totalParents = await User.countDocuments({ role: 'parent' });
+    // Count parents by distinct parentEmail entries in Student collection so numbers always match
+    const distinctParents = await Student.distinct('parentEmail', { parentEmail: { $ne: null, $ne: '' } });
+    const totalParents = distinctParents.length;
     const totalTeachers = await Teacher.countDocuments();
     const newInquiries = await Application.countDocuments({
       appliedDate: {
