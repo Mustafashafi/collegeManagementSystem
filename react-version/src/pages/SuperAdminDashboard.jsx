@@ -75,14 +75,9 @@ const SuperAdminDashboard = () => {
 
   return (
     <SuperAdminLayout>
-      <div className="page-header" style={{ marginBottom: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 style={{ fontSize: '28px', fontWeight: 800 }}>Network Overview</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>Real-time statistics across all clusters & instances.</p>
-        </div>
-        <button onClick={fetchDashboardData} className="btn-icon" style={{ padding: '8px 12px', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600 }} disabled={loading}>
-          <i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`}></i> Refresh
-        </button>
+      <div className="page-header" style={{ marginBottom: '40px' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: 800 }}>Network Overview</h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>Real-time statistics across all clusters & instances.</p>
       </div>
 
       {loading ? (

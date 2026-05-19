@@ -129,30 +129,32 @@ const SuperAdminSettings = () => {
               </div>
               
               {/* Toggle Switch */}
-              <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '22px' }}>
+              <label style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px', cursor: 'pointer', flexShrink: 0 }}>
                 <input 
                   type="checkbox" 
                   checked={mfaMandatory} 
                   onChange={(e) => setMfaMandatory(e.target.checked)}
-                  style={{ opacity: 0, width: 0, height: 0 }}
+                  style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
                 />
-                <span className="slider" style={{
+                <span style={{
                   position: 'absolute',
-                  cursor: 'pointer',
                   top: 0, left: 0, right: 0, bottom: 0,
-                  backgroundColor: mfaMandatory ? '#22c55e' : '#ccc',
-                  borderRadius: '34px',
-                  transition: '0.3s'
+                  backgroundColor: mfaMandatory ? '#22c55e' : '#d1d5db',
+                  borderRadius: '12px',
+                  transition: 'background-color 0.3s',
+                  display: 'block'
                 }}>
                   <span style={{
                     position: 'absolute',
-                    content: '""',
-                    height: '16px', width: '16px',
-                    left: mfaMandatory ? '21px' : '3px',
-                    bottom: '3px',
-                    backgroundColor: 'white',
+                    height: '18px',
+                    width: '18px',
+                    left: mfaMandatory ? '23px' : '3px',
+                    top: '3px',
+                    backgroundColor: '#ffffff',
                     borderRadius: '50%',
-                    transition: '0.3s'
+                    transition: 'left 0.3s',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                    display: 'block'
                   }}></span>
                 </span>
               </label>
@@ -165,30 +167,32 @@ const SuperAdminSettings = () => {
               </div>
               
               {/* Toggle Switch */}
-              <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '22px' }}>
+              <label style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px', cursor: 'pointer', flexShrink: 0 }}>
                 <input 
                   type="checkbox" 
                   checked={globalApiAccess} 
                   onChange={(e) => setGlobalApiAccess(e.target.checked)}
-                  style={{ opacity: 0, width: 0, height: 0 }}
+                  style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
                 />
-                <span className="slider" style={{
+                <span style={{
                   position: 'absolute',
-                  cursor: 'pointer',
                   top: 0, left: 0, right: 0, bottom: 0,
-                  backgroundColor: globalApiAccess ? '#22c55e' : '#ccc',
-                  borderRadius: '34px',
-                  transition: '0.3s'
+                  backgroundColor: globalApiAccess ? '#22c55e' : '#d1d5db',
+                  borderRadius: '12px',
+                  transition: 'background-color 0.3s',
+                  display: 'block'
                 }}>
                   <span style={{
                     position: 'absolute',
-                    content: '""',
-                    height: '16px', width: '16px',
-                    left: globalApiAccess ? '21px' : '3px',
-                    bottom: '3px',
-                    backgroundColor: 'white',
+                    height: '18px',
+                    width: '18px',
+                    left: globalApiAccess ? '23px' : '3px',
+                    top: '3px',
+                    backgroundColor: '#ffffff',
                     borderRadius: '50%',
-                    transition: '0.3s'
+                    transition: 'left 0.3s',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                    display: 'block'
                   }}></span>
                 </span>
               </label>
@@ -207,30 +211,32 @@ const SuperAdminSettings = () => {
               </div>
               
               {/* Toggle Switch */}
-              <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '22px' }}>
+              <label style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px', cursor: 'pointer', flexShrink: 0 }}>
                 <input 
                   type="checkbox" 
                   checked={maintenanceMode} 
                   onChange={(e) => setMaintenanceMode(e.target.checked)}
-                  style={{ opacity: 0, width: 0, height: 0 }}
+                  style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
                 />
-                <span className="slider" style={{
+                <span style={{
                   position: 'absolute',
-                  cursor: 'pointer',
                   top: 0, left: 0, right: 0, bottom: 0,
-                  backgroundColor: maintenanceMode ? '#22c55e' : '#ccc',
-                  borderRadius: '34px',
-                  transition: '0.3s'
+                  backgroundColor: maintenanceMode ? '#22c55e' : '#d1d5db',
+                  borderRadius: '12px',
+                  transition: 'background-color 0.3s',
+                  display: 'block'
                 }}>
                   <span style={{
                     position: 'absolute',
-                    content: '""',
-                    height: '16px', width: '16px',
-                    left: maintenanceMode ? '21px' : '3px',
-                    bottom: '3px',
-                    backgroundColor: 'white',
+                    height: '18px',
+                    width: '18px',
+                    left: maintenanceMode ? '23px' : '3px',
+                    top: '3px',
+                    backgroundColor: '#ffffff',
                     borderRadius: '50%',
-                    transition: '0.3s'
+                    transition: 'left 0.3s',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                    display: 'block'
                   }}></span>
                 </span>
               </label>

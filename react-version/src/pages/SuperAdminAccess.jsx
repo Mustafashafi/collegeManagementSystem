@@ -97,30 +97,32 @@ const SuperAdminAccess = () => {
                     <span className="perm-name" style={{ fontSize: '13px', fontWeight: 500, color: '#374151' }}>{perm.name}</span>
                     
                     {/* Toggle Switch */}
-                    <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '22px' }}>
+                    <label style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px', cursor: 'pointer', flexShrink: 0 }}>
                       <input 
                         type="checkbox" 
                         checked={perm.enabled} 
                         onChange={() => handleTogglePermission(roleIdx, permIdx)}
-                        style={{ opacity: 0, width: 0, height: 0 }}
+                        style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
                       />
-                      <span className="slider" style={{
+                      <span style={{
                         position: 'absolute',
-                        cursor: 'pointer',
                         top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundColor: perm.enabled ? '#22c55e' : '#ccc',
-                        borderRadius: '34px',
-                        transition: '0.3s'
+                        backgroundColor: perm.enabled ? '#22c55e' : '#d1d5db',
+                        borderRadius: '12px',
+                        transition: 'background-color 0.3s',
+                        display: 'block'
                       }}>
                         <span style={{
                           position: 'absolute',
-                          content: '""',
-                          height: '16px', width: '16px',
-                          left: perm.enabled ? '21px' : '3px',
-                          bottom: '3px',
-                          backgroundColor: 'white',
+                          height: '18px',
+                          width: '18px',
+                          left: perm.enabled ? '23px' : '3px',
+                          top: '3px',
+                          backgroundColor: '#ffffff',
                           borderRadius: '50%',
-                          transition: '0.3s'
+                          transition: 'left 0.3s',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                          display: 'block'
                         }}></span>
                       </span>
                     </label>
