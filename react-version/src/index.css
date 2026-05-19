@@ -1621,6 +1621,9 @@ input:checked+.slider {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   position: relative;
   overflow: hidden;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .receipt-header {
@@ -1645,6 +1648,8 @@ input:checked+.slider {
 
 .receipt-body {
   padding: 24px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .receipt-info-grid {
@@ -1754,6 +1759,9 @@ input:checked+.slider {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .record-header {
@@ -1771,6 +1779,8 @@ input:checked+.slider {
 
 .record-body {
   padding: 20px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .btn-submit-payment {
@@ -3069,6 +3079,9 @@ input:checked+.slider {
   position: relative;
   overflow: hidden;
   animation: slideIn 0.3s ease-out;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes slideIn {
@@ -3095,6 +3108,8 @@ input:checked+.slider {
 .receipt-body {
   padding: 24px;
   position: relative;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .receipt-watermark {
@@ -3204,6 +3219,9 @@ input:checked+.slider {
   border-radius: 12px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .record-header {
@@ -3216,6 +3234,8 @@ input:checked+.slider {
 
 .record-body {
   padding: 20px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .btn-submit-payment {
