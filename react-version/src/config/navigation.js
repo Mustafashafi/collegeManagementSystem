@@ -58,8 +58,7 @@ export const crmNavigation = [
     title: "Operations",
     links: [
       { label: "Tasks & Follow-ups", path: "/crm/tasks", icon: "fas fa-tasks" },
-      { label: "Communication", path: "/crm/communication", icon: "fas fa-comments" },
-      { label: "Campaigns", path: "/crm/marketing", icon: "fas fa-bullhorn" }
+      { label: "Communication", path: "/crm/communication", icon: "fas fa-comments" }
     ]
   },
   {
