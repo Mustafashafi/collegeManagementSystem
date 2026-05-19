@@ -108,6 +108,7 @@ export const superAdminApi = {
   updateRole: (id, data) => api.put(`/api/superadmin/roles/${id}`, data),
   getSettings: () => api.get('/api/superadmin/settings'),
   updateSettings: (data) => api.put('/api/superadmin/settings', data),
+  sendEmail: (data) => api.post('/api/email/send', data),
 };
 
 // Notifications API
