@@ -6,7 +6,6 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
-const xss = require('xss-clean');
 const morgan = require('morgan');
 
 // Import your DB connection
@@ -21,9 +20,6 @@ app.use(express.json());
 
 // Security: Prevent NoSQL Injection
 app.use(mongoSanitize());
-
-// Security: Prevent Cross-Site Scripting (XSS)
-app.use(xss());
 
 // Logging: See HTTP requests in the terminal
 app.use(morgan('dev'));
