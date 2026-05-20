@@ -198,7 +198,12 @@ const s3 = new S3Client({
 const profileUpload = multer({
   storage: multerS3({
     s3: s3,
-    bucket: process.env.AWS_BUCKET_NAME,
+    bucket: function (req, file, cb) {
+      if (!process.env.AWS_BUCKET_NAME) {
+        return cb(new Error('AWS_BUCKET_NAME environment variable is not set.'));
+      }
+      cb(null, process.env.AWS_BUCKET_NAME);
+    },
     metadata: function (req, file, cb) {
       cb(null, { fieldName: file.fieldname });
     },
