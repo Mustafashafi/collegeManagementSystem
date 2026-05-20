@@ -41,7 +41,15 @@ const SuperAdminLayout = ({ children }) => (
               <h4 style={{ fontSize: '14px', fontWeight: 700, lineHeight: '1.2' }}>Global Administrator</h4>
               <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Master Access</p>
             </div>
-            <div className="avatar" style={{ background: '#1a1a1a', borderRadius: '8px', marginLeft: '8px' }}>GA</div>
+            <div className="avatar" style={{ background: '#1a1a1a', borderRadius: '8px', marginLeft: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {(() => {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                if (user && user.profileImage) {
+                  return <img src={user.profileImage} alt="Admin" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
+                }
+                return 'GA';
+              })()}
+            </div>
           </div>
         </div>
       </header>
