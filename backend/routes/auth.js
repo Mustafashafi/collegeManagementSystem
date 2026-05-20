@@ -3,18 +3,8 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { body, validationResult } = require('express-validator');
 const asyncHandler = require('express-async-handler');
-const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
-
-// Define a strict rate limiter for login/register to prevent brute force
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 auth requests per windowMs
-  message: { success: false, message: 'Too many login attempts from this IP, please try again after 15 minutes' },
-  standardHeaders: true, 
-  legacyHeaders: false, 
-});
 
 // Middleware to handle validation errors cleanly
 const validateRequest = (req, res, next) => {
@@ -28,7 +18,7 @@ const validateRequest = (req, res, next) => {
 // ─────────────────────────────────────────
 // POST /api/auth/login
 // ─────────────────────────────────────────
-router.post('/login', authLimiter, [
+router.post('/login', [
   body('email').isEmail().withMessage('Please provide a valid email address'),
   body('password').notEmpty().withMessage('Password is required'),
   body('role').notEmpty().withMessage('Role is required'),
@@ -98,7 +88,7 @@ router.post('/login', authLimiter, [
 // ─────────────────────────────────────────
 // POST /api/auth/register (for testing)
 // ─────────────────────────────────────────
-router.post('/register', authLimiter, [
+router.post('/register', [
   body('name').notEmpty().withMessage('Name is required'),
   body('email').isEmail().withMessage('Please provide a valid email'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
