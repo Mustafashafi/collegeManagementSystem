@@ -4,6 +4,10 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+const morgan = require('morgan');
 
 // Import your DB connection
 const connectDB = require('./config/db'); 
@@ -11,8 +15,18 @@ const connectDB = require('./config/db');
 const app = express();
 
 // Middleware
+app.use(helmet({ crossOriginResourcePolicy: false })); // Allowed for cross-origin image loads if any
 app.use(cors());
 app.use(express.json());
+
+// Security: Prevent NoSQL Injection
+app.use(mongoSanitize());
+
+// Security: Prevent Cross-Site Scripting (XSS)
+app.use(xss());
+
+// Logging: See HTTP requests in the terminal
+app.use(morgan('dev'));
 
 if (!process.env.MONGODB_URI) {
     console.error("❌ ERROR: MONGODB_URI is undefined. Check your .env file path!");
