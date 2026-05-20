@@ -296,7 +296,7 @@ const TeacherLayout = ({ children }) => {
             {/* ── Avatar ── */}
             <div style={{ width: '36px', height: '36px', background: '#1a1a1a', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '13px', overflow: 'hidden' }}>
               {user.profileImage ? (
-                <img src={`${API_BASE_URL}${user.profileImage}`} alt={teacherName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={user.profileImage.startsWith('http') ? user.profileImage : `${API_BASE_URL}${user.profileImage}`} alt={teacherName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 initials
               )}

@@ -142,7 +142,7 @@ const StudentProfile = () => {
           >
             {student.profileImage ? (
               <img 
-                src={`${API_BASE_URL}${student.profileImage}`} 
+                src={student.profileImage.startsWith('http') ? student.profileImage : `${API_BASE_URL}${student.profileImage}`} 
                 alt="Avatar" 
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
               />

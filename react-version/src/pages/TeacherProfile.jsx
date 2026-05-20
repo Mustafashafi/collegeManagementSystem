@@ -149,7 +149,7 @@ const TeacherProfile = () => {
           >
             {teacher.profileImage ? (
               <img 
-                src={`${API_BASE_URL}${teacher.profileImage}`} 
+                src={teacher.profileImage.startsWith('http') ? teacher.profileImage : `${API_BASE_URL}${teacher.profileImage}`} 
                 alt="Avatar" 
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
               />

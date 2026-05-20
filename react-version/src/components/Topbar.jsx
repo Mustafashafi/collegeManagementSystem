@@ -205,7 +205,7 @@ const Topbar = ({ user, notifications = [], setNotifications }) => {
         <div className="user-profile" style={{ marginLeft: '16px' }}>
           <div className="avatar" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a1a' }}>
             {user.profileImage ? (
-              <img src={`${API_BASE_URL}${user.profileImage}`} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={user.profileImage.startsWith('http') ? user.profileImage : `${API_BASE_URL}${user.profileImage}`} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               user.initials
             )}

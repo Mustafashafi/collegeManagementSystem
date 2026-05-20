@@ -139,7 +139,7 @@ const LibrarianProfile = () => {
           >
             {librarian.profileImage ? (
               <img 
-                src={`${API_BASE_URL}${librarian.profileImage}`} 
+                src={librarian.profileImage.startsWith('http') ? librarian.profileImage : `${API_BASE_URL}${librarian.profileImage}`} 
                 alt="Avatar" 
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
               />
