@@ -17,7 +17,7 @@ const PublicHome = () => {
               </div>
             </div>
             <div className="hero-visual" data-aos="fade-left">
-              <img src="https://images.unsplash.com/photo-1541339907198-e08756dee8ac?q=80&w=1470&auto=format&fit=crop" alt="Skyra Campus" className="hero-main-img" />
+              <img src="/college_campus_hero.png" alt="Skyra Campus" className="hero-main-img" />
               <div className="floating-card card-1">
                 <div className="program-icon" style={{ margin: 0 }}><i className="fas fa-star"></i></div>
                 <div>

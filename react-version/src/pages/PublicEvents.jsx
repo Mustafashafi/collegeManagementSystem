@@ -10,6 +10,20 @@ const PublicEvents = () => {
     queryFn: () => adminApi.getEvents().then(res => res.data),
   });
 
+  const getEventImage = (event) => {
+    if (event.image && event.image.trim() !== '') {
+      return event.image;
+    }
+    const fallbacks = {
+      ACADEMIC: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=600&auto=format&fit=crop',
+      HOLIDAY: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=600&auto=format&fit=crop',
+      EVENT: 'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=600&auto=format&fit=crop',
+      NOTICE: 'https://images.unsplash.com/photo-1572945281864-7079c6d4907a?q=80&w=600&auto=format&fit=crop',
+      LIBRARY: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=600&auto=format&fit=crop'
+    };
+    return fallbacks[event.tag] || fallbacks.EVENT;
+  };
+
   return (
     <>
       <section className="page-header">
@@ -33,7 +47,7 @@ const PublicEvents = () => {
               style={{ cursor: 'pointer' }}
             >
               <div className="event-img">
-                <img src={event.image || 'https://via.placeholder.com/400x250'} alt={event.title} />
+                <img src={getEventImage(event)} alt={event.title} />
                 <div className="event-date">
                   <span>{new Date(event.date).getDate()}</span>
                   <small>{new Date(event.date).toLocaleString('default', { month: 'short' })}</small>

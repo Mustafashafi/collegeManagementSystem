@@ -111,7 +111,7 @@ const PublicAdmission = () => {
                 </div>
 
                 <div className="form-group full-width">
-                  <button type="submit" className="btn btn-yellow" style={{ width: '100%', padding: '1.25rem' }}>Submit Application</button>
+                  <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '1.25rem' }}>Submit Application</button>
                 </div>
               </div>
             </form>

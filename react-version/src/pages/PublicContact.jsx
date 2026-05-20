@@ -66,7 +66,7 @@ const PublicContact = () => {
                 <label>Message</label>
                 <textarea className="form-input" rows="5" required></textarea>
               </div>
-              <button type="submit" className="btn btn-yellow" style={{ width: '100%', padding: '1.25rem' }}>Send Message</button>
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '1.25rem' }}>Send Message</button>
 
             </form>
           </div>

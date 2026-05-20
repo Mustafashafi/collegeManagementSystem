@@ -10,7 +10,8 @@ const EventSchema = new mongoose.Schema({
   audience: { type: String, enum: ['All', 'Student', 'Teacher', 'Librarian', 'Parent'], default: 'All' },
   tagBg: { type: String, default: '#f3f4f6' },
   tagColor: { type: String, default: '#111827' },
-  createdBy: { type: String, default: 'Admin' }
+  createdBy: { type: String, default: 'Admin' },
+  image: { type: String }
 }, {
   timestamps: true
 });

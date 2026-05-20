@@ -55,8 +55,7 @@ const PublicLayout = () => {
               <li><Link to="/contact">Contact Us</Link></li>
             </ul>
             <div className="nav-actions">
-              <Link to="/admission" className="btn btn-yellow">Apply Now</Link>
-
+              <Link to="/admission" className="btn btn-primary">Apply Now</Link>
             </div>
           </nav>
         </div>

@@ -36,14 +36,28 @@ const PublicEventDetail = () => {
     );
   }
 
+  const getEventImage = (event) => {
+    if (event.image && event.image.trim() !== '') {
+      return event.image;
+    }
+    const fallbacks = {
+      ACADEMIC: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=600&auto=format&fit=crop',
+      HOLIDAY: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=600&auto=format&fit=crop',
+      EVENT: 'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=600&auto=format&fit=crop',
+      NOTICE: 'https://images.unsplash.com/photo-1572945281864-7079c6d4907a?q=80&w=600&auto=format&fit=crop',
+      LIBRARY: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=600&auto=format&fit=crop'
+    };
+    return fallbacks[event.tag] || fallbacks.EVENT;
+  };
+
   return (
     <>
       <section 
         className="event-detail-hero" 
-        style={{ backgroundImage: `url(${event.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+        style={{ backgroundImage: `url(${getEventImage(event)})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         <div className="container">
-          <div className="badge" style={{ background: 'rgba(79, 70, 229, 0.2)', color: '#818cf8', border: '1px solid rgba(129, 140, 248, 0.3)' }}>
+          <div className="badge" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
             Upcoming Event
           </div>
           <h1 data-aos="fade-up">{event.title}</h1>
